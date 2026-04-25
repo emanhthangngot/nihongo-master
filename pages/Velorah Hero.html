@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nihongo Master — Where dreams rise through the silence.</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500&family=Noto+Sans+JP:wght@400;500&family=Noto+Serif+JP:wght@400&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --background:        hsl(201, 100%, 13%);
+      --foreground:        hsl(0, 0%, 100%);
+      --muted-foreground:  hsl(240, 4%, 66%);
+      --primary:           hsl(0, 0%, 100%);
+      --primary-foreground:hsl(0, 0%, 4%);
+      --secondary:         hsl(0, 0%, 10%);
+      --muted:             hsl(0, 0%, 10%);
+      --border:            hsl(0, 0%, 18%);
+      --font-body: 'Inter', 'Noto Sans JP', sans-serif;
+      --font-display: 'Instrument Serif', 'Noto Serif JP', serif;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--background);
+      color: var(--foreground);
+      font-family: var(--font-body);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Liquid Glass ── */
+    .liquid-glass {
+      background: rgba(255, 255, 255, 0.01);
+      background-blend-mode: luminosity;
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      border: none;
+      box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.1);
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+      color: var(--foreground);
+      font-family: var(--font-body);
+    }
+    .liquid-glass::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      padding: 1.4px;
+      background: linear-gradient(
+        180deg,
+        rgba(255,255,255,0.45) 0%,
+        rgba(255,255,255,0.15) 20%,
+        rgba(255,255,255,0) 40%,
+        rgba(255,255,255,0) 60%,
+        rgba(255,255,255,0.15) 80%,
+        rgba(255,255,255,0.45) 100%
+      );
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      pointer-events: none;
+    }
+    .liquid-glass:hover { transform: scale(1.03); transition: transform 0.2s ease; }
+
+    /* ── Animations ── */
+    @keyframes fade-rise {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-rise         { animation: fade-rise 0.8s ease-out 0.0s both; }
+    .animate-fade-rise-delay   { animation: fade-rise 0.8s ease-out 0.2s both; }
+    .animate-fade-rise-delay-2 { animation: fade-rise 0.8s ease-out 0.4s both; }
+    .animate-fade-rise-delay-3 { animation: fade-rise 0.8s ease-out 0.6s both; }
+
+    /* ── Layout ── */
+    .page-wrapper {
+      position: relative;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    video.bg-video {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: 0;
+    }
+
+    .content-layer {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    /* ── Navbar ── */
+    nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.1rem 2rem;
+      max-width: 90rem;
+      margin: 0 auto;
+      width: 100%;
+      gap: 1.5rem;
+    }
+    .logo {
+      font-family: var(--font-display);
+      font-size: 1.6rem;
+      letter-spacing: -0.02em;
+      color: var(--foreground);
+      text-decoration: none;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .logo sup { font-size: 0.55rem; vertical-align: super; }
+
+    .nav-links {
+      display: flex;
+      gap: 0.25rem;
+      list-style: none;
+      flex: 1;
+      justify-content: center;
+    }
+    @media (max-width: 767px) { .nav-links { display: none; } }
+    .nav-links a {
+      font-size: 0.8125rem;
+      color: var(--muted-foreground);
+      text-decoration: none;
+      transition: color 0.2s, background 0.2s;
+      padding: 0.4rem 0.85rem;
+      border-radius: 9999px;
+    }
+    .nav-links a:hover { color: var(--foreground); background: rgba(255,255,255,0.06); }
+    .nav-links a.active { color: var(--foreground); background: rgba(255,255,255,0.08); }
+
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-shrink: 0;
+    }
+    .nav-icon-btn {
+      background: none;
+      border: none;
+      color: var(--muted-foreground);
+      cursor: pointer;
+      padding: 0.45rem 0.6rem;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: color 0.2s, background 0.2s;
+      font-size: 0.8rem;
+      font-family: var(--font-body);
+      gap: 0.3rem;
+    }
+    .nav-icon-btn:hover { color: var(--foreground); background: rgba(255,255,255,0.08); }
+    .nav-icon-btn.active-toggle { color: var(--foreground); background: rgba(255,255,255,0.1); }
+
+    /* ── Flame Streak ── */
+    .streak-badge {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      color: #f97316;
+      padding: 0.35rem 0.85rem 0.35rem 0.5rem;
+      border-radius: 9999px;
+      background: rgba(249,115,22,0.12);
+      border: 1px solid rgba(249,115,22,0.2);
+      white-space: nowrap;
+      cursor: pointer;
+      transition: background 0.4s, border-color 0.4s, color 0.4s;
+      position: relative;
+    }
+    .streak-badge.cold {
+      color: var(--muted-foreground);
+      background: rgba(255,255,255,0.05);
+      border-color: rgba(255,255,255,0.1);
+    }
+    .streak-badge.lit {
+      box-shadow: 0 0 12px 3px rgba(249,115,22,0.3);
+      animation: streak-glow 2s ease-in-out infinite;
+    }
+    @keyframes streak-glow {
+      0%,100% { box-shadow: 0 0 10px 2px rgba(249,115,22,0.25); }
+      50%      { box-shadow: 0 0 22px 7px rgba(249,115,22,0.5); }
+    }
+    #flame-canvas { display: block; width: 22px; height: 26px; }
+
+    .streak-tooltip {
+      position: absolute;
+      top: calc(100% + 8px);
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(8,18,30,0.97);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 10px;
+      padding: 0.5rem 0.75rem;
+      font-size: 0.75rem;
+      color: var(--foreground);
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s;
+      z-index: 200;
+      text-align: center;
+      line-height: 1.6;
+    }
+    .streak-badge:hover .streak-tooltip { opacity: 1; }
+    .nav-cta {
+      border-radius: 9999px;
+      padding: 0.5rem 1.1rem;
+      font-size: 0.8125rem;
+      white-space: nowrap;
+    }
+    .avatar-wrap { position: relative; }
+    .avatar {
+      width: 2rem;
+      height: 2rem;
+      border-radius: 9999px;
+      background: linear-gradient(135deg, rgba(255,255,255,0.2), rgba(255,255,255,0.05));
+      border: 1px solid rgba(255,255,255,0.2);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      color: var(--foreground);
+      transition: border-color 0.2s;
+    }
+    .avatar:hover { border-color: rgba(255,255,255,0.45); }
+    .avatar-dropdown {
+      display: none;
+      position: absolute;
+      top: calc(100% + 0.5rem);
+      right: 0;
+      background: rgba(8,18,30,0.95);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 12px;
+      padding: 0.5rem;
+      min-width: 160px;
+      z-index: 100;
+    }
+    .avatar-wrap.open .avatar-dropdown { display: block; }
+    .avatar-dropdown a {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.5rem 0.75rem;
+      font-size: 0.8125rem;
+      color: var(--muted-foreground);
+      text-decoration: none;
+      border-radius: 8px;
+      transition: background 0.15s, color 0.15s;
+    }
+    .avatar-dropdown a:hover { background: rgba(255,255,255,0.07); color: var(--foreground); }
+    .avatar-dropdown hr { border: none; border-top: 1px solid rgba(255,255,255,0.08); margin: 0.3rem 0; }
+
+    /* Search modal */
+    #search-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 9998;
+      align-items: flex-start;
+      justify-content: center;
+      padding-top: 6rem;
+      background: rgba(0,0,0,0.55);
+      backdrop-filter: blur(6px);
+    }
+    #search-modal.open { display: flex; }
+    .search-box {
+      background: rgba(8,18,30,0.95);
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 16px;
+      padding: 1rem 1.25rem;
+      width: 100%;
+      max-width: 520px;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .search-box input {
+      flex: 1;
+      background: none;
+      border: none;
+      outline: none;
+      color: var(--foreground);
+      font-size: 1rem;
+      font-family: var(--font-body);
+    }
+    .search-box input::placeholder { color: var(--muted-foreground); }
+    .search-hint { font-size: 0.75rem; color: var(--muted-foreground); white-space: nowrap; }
+    @media (max-width: 767px) {
+      .nav-right .furigana-btn,
+      .nav-right .nav-cta { display: none; }
+    }
+
+    /* ── Hero ── */
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 2rem 1.5rem 3rem;
+    }
+
+    h1 {
+      font-family: var(--font-display);
+      font-size: clamp(2.4rem, 6.5vw, 5.5rem);
+      line-height: 0.97;
+      font-weight: 400;
+      letter-spacing: -2.46px;
+      max-width: 72rem;
+      color: var(--foreground);
+    }
+    h1 em {
+      font-style: normal;
+      color: var(--muted-foreground);
+    }
+
+    .subtext {
+      color: var(--muted-foreground);
+      font-size: clamp(0.875rem, 1.4vw, 1rem);
+      max-width: 34rem;
+      margin-top: 1.5rem;
+      line-height: 1.7;
+    }
+
+    .hero-cta {
+      border-radius: 9999px;
+      padding: 0.875rem 3rem;
+      font-size: 0.95rem;
+      margin-top: 1.75rem;
+      font-family: 'Inter', 'Noto Sans JP', sans-serif;
+    }
+
+    .feature-pills {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 1.25rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .pill {
+      border-radius: 9999px;
+      padding: 0.5rem 1.25rem;
+      font-size: 0.875rem;
+      color: var(--muted-foreground);
+      font-family: 'Inter', 'Noto Sans JP', sans-serif;
+    }
+
+    /* ── Tweaks Panel ── */
+    #tweaks-panel {
+      display: none;
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      z-index: 9999;
+      background: rgba(10, 10, 18, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 16px;
+      padding: 1.25rem 1.5rem;
+      min-width: 220px;
+      color: var(--foreground);
+      font-family: var(--font-body);
+      font-size: 0.8rem;
+    }
+    #tweaks-panel h3 {
+      font-family: var(--font-display);
+      font-size: 1rem;
+      margin-bottom: 1rem;
+      color: var(--foreground);
+    }
+    .tweak-row { margin-bottom: 0.85rem; }
+    .tweak-row label { display: block; color: var(--muted-foreground); margin-bottom: 0.3rem; }
+    .tweak-row select, .tweak-row input[type=range] {
+      width: 100%;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 6px;
+      color: var(--foreground);
+      padding: 0.3rem 0.5rem;
+      font-size: 0.8rem;
+      font-family: var(--font-body);
+    }
+    .tweak-row input[type=range] { padding: 0; border: none; background: none; accent-color: rgba(255,255,255,0.5); }
+  </style>
+</head>
+<body>
+
+<div class="page-wrapper">
+
+  <!-- Video Background -->
+  <video class="bg-video" autoplay loop muted playsinline>
+    <source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260314_131748_f2ca2a28-fed7-44c8-b9a9-bd9acdd5ec31.mp4" type="video/mp4" />
+  </video>
+
+  <!-- Content -->
+  <div class="content-layer">
+
+    <!-- Navbar -->
+    <nav class="animate-fade-rise">
+      <!-- 1. Logo -->
+      <a href="#" class="logo">Nihongo<em style="font-style:normal;color:var(--muted-foreground)">Master</em><sup>®</sup></a>
+
+      <!-- 2. Center Nav -->
+      <ul class="nav-links">
+        <li><a href="pages/Dashboard.html">Dashboard</a></li>
+        <li><a href="pages/Learning Path.html">Learning Path</a></li>
+        <li><a href="pages/AI Tutor.html">AI Tutor</a></li>
+        <li><a href="pages/Flashcards.html">Flashcards</a></li>
+        <li><a href="pages/Dictionary.html">Dictionary</a></li>
+      </ul>
+
+      <!-- 3 & 4. Right Utilities + User Actions -->
+      <div class="nav-right">
+        <!-- Streak -->
+        <div class="streak-badge lit" id="streak-badge">
+          <canvas id="flame-canvas" width="44" height="52"></canvas>
+          <span id="streak-count">12</span>
+          <div class="streak-tooltip" id="streak-tooltip">12-day streak 🔥<br><span style="color:var(--muted-foreground);font-size:0.7rem">Study today to keep it alive</span></div>
+        </div>
+
+        <!-- Search -->
+        <button class="nav-icon-btn" id="search-btn" title="Search vocabulary / Kanji">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </button>
+
+        <!-- Furigana toggle -->
+        <button class="nav-icon-btn furigana-btn" id="furigana-btn" title="Toggle furigana">
+          <span style="font-size:0.65rem;line-height:1;text-align:center;display:flex;flex-direction:column;align-items:center;gap:1px;">
+            <span style="font-size:0.55rem;color:inherit;opacity:0.75">ふ</span>
+            <span>文</span>
+          </span>
+        </button>
+
+        <!-- Quick Practice CTA -->
+        <a href="pages/Onboarding.html" class="liquid-glass nav-cta" style="display:inline-flex;align-items:center">Begin Journey</a>
+
+        <!-- Avatar -->
+        <div class="avatar-wrap" id="avatar-wrap">
+          <div class="avatar" id="avatar-btn">你</div>
+          <div class="avatar-dropdown">
+            <a href="#">📓 Notebook</a>
+            <a href="#">⚙️ Settings</a>
+            <hr />
+            <a href="#">↪ Log Out</a>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Hero -->
+    <main>
+      <h1 class="animate-fade-rise" id="hero-headline">
+        Master Japanese <em>the way a</em> student <em>becomes a scholar.</em>
+      </h1>
+
+      <p class="subtext animate-fade-rise-delay">
+        Nihongo Master pairs spaced repetition, AI conversation, and graded reading into one seamless practice — from your first hiragana to JLPT N1 fluency.
+      </p>
+
+      <a href="pages/Onboarding.html" class="liquid-glass hero-cta animate-fade-rise-delay-2" style="display:inline-flex;align-items:center;justify-content:center">
+        Begin Your Path →
+      </a>
+
+      <div class="feature-pills animate-fade-rise-delay-3">
+        <span class="liquid-glass pill">AI Conversation Tutor</span>
+        <span class="liquid-glass pill">SRS Flashcards</span>
+        <span class="liquid-glass pill">Kanji Breakdown</span>
+        <span class="liquid-glass pill">JLPT Skill Tree</span>
+        <span class="liquid-glass pill">Graded Reading</span>
+      </div>
+    </main>
+
+  </div>
+</div>
+
+<!-- Search Modal -->
+<div id="search-modal">
+  <div class="search-box">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input id="search-input" type="text" placeholder="Search vocabulary, kanji, grammar…" autofocus />
+    <span class="search-hint">Esc to close</span>
+  </div>
+</div>
+
+<!-- Tweaks Panel -->
+<div id="tweaks-panel">
+  <h3>Tweaks</h3>
+
+  <div class="tweak-row">
+    <label>Headline size</label>
+    <input type="range" id="tweak-size" min="60" max="130" value="95" step="5" />
+  </div>
+
+  <div class="tweak-row">
+    <label>Feature pills</label>
+    <select id="tweak-pills">
+      <option value="show">Visible</option>
+      <option value="hide">Hidden</option>
+    </select>
+  </div>
+
+  <div class="tweak-row">
+    <label>Background tint</label>
+    <select id="tweak-tint">
+      <option value="none">None</option>
+      <option value="navy">Navy veil</option>
+      <option value="dark">Dark veil</option>
+    </select>
+  </div>
+</div>
+
+<script>
+  // ── Canvas Flame Engine ──
+  (function() {
+    const canvas = document.getElementById('flame-canvas');
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width, H = canvas.height;
+    let isLit = true;
+    let particles = [];
+    let rafId;
+
+    function rand(a, b) { return a + Math.random() * (b - a); }
+
+    class Particle {
+      constructor() { this.reset(); }
+      reset() {
+        this.x = rand(W * 0.25, W * 0.75);
+        this.y = H;
+        this.vx = rand(-0.6, 0.6);
+        this.vy = rand(-2.2, -1.2);
+        this.life = rand(0.6, 1.0);
+        this.decay = rand(0.018, 0.032);
+        this.size = rand(4, 10);
+        this.type = Math.random() < 0.15 ? 'ember' : 'flame';
+        if (this.type === 'ember') {
+          this.size = rand(1, 2.5);
+          this.vy = rand(-3, -1.8);
+          this.vx = rand(-1.2, 1.2);
+          this.decay = rand(0.012, 0.022);
+        }
+      }
+      update() {
+        this.x += this.vx + Math.sin(Date.now() * 0.003 + this.y) * 0.4;
+        this.y += this.vy;
+        this.vy *= 0.985;
+        this.life -= this.decay;
+        this.size *= 0.985;
+        if (this.type === 'ember') this.vx *= 0.97;
+      }
+      draw() {
+        if (this.life <= 0) return;
+        const a = Math.max(0, this.life);
+        if (this.type === 'ember') {
+          const g = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.size * 2);
+          g.addColorStop(0, `rgba(255,220,80,${a})`);
+          g.addColorStop(0.5, `rgba(251,146,60,${a * 0.6})`);
+          g.addColorStop(1, `rgba(249,115,22,0)`);
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, this.size * 2, 0, Math.PI * 2);
+          ctx.fillStyle = g;
+          ctx.fill();
+        } else {
+          const t = 1 - this.life;
+          // color: yellow core → orange → red tip
+          const r = Math.round(255);
+          const g2 = Math.round(220 - t * 160);
+          const b = Math.round(60 - t * 60);
+          const grad = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.size);
+          grad.addColorStop(0, `rgba(${r},${g2},${b},${a * 0.9})`);
+          grad.addColorStop(0.5, `rgba(249,115,22,${a * 0.55})`);
+          grad.addColorStop(1, `rgba(180,40,0,0)`);
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+          ctx.fillStyle = grad;
+          ctx.fill();
+        }
+      }
+    }
+
+    // seed initial particles
+    for (let i = 0; i < 28; i++) {
+      const p = new Particle();
+      p.y = rand(H * 0.3, H);
+      p.life = rand(0.2, 0.9);
+      particles.push(p);
+    }
+
+    function loop() {
+      ctx.clearRect(0, 0, W, H);
+      if (isLit) {
+        // spawn new particles
+        for (let i = 0; i < 3; i++) particles.push(new Particle());
+        // base glow
+        const baseGlow = ctx.createRadialGradient(W/2, H, 0, W/2, H, W * 0.7);
+        baseGlow.addColorStop(0, 'rgba(249,115,22,0.35)');
+        baseGlow.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = baseGlow;
+        ctx.fillRect(0, 0, W, H);
+      } else {
+        // dying embers only
+        if (Math.random() < 0.08) {
+          const p = new Particle();
+          p.type = 'ember';
+          p.size = rand(0.5, 1.5);
+          p.vy = rand(-1, -0.4);
+          p.decay = rand(0.025, 0.04);
+          particles.push(p);
+        }
+      }
+
+      particles = particles.filter(p => p.life > 0);
+      particles.forEach(p => { p.update(); p.draw(); });
+
+      rafId = requestAnimationFrame(loop);
+    }
+    loop();
+
+    // expose controls
+    window._flameSetLit = function(lit) {
+      isLit = lit;
+      if (!lit) {
+        // kill most particles fast
+        particles.forEach(p => { if (p.type === 'flame') p.decay += 0.08; });
+      }
+    };
+  })();
+
+  // ── Streak logic ──
+  const STREAK_KEY = 'nm_streak';
+  const LAST_STUDY_KEY = 'nm_last_study';
+
+  function getTodayStr() {
+    return new Date().toISOString().slice(0, 10);
+  }
+
+  function loadStreak() {
+    return {
+      count: parseInt(localStorage.getItem(STREAK_KEY) || '12'),
+      lastStudy: localStorage.getItem(LAST_STUDY_KEY) || getTodayStr() // default lit
+    };
+  }
+
+  function saveStreak(count, date) {
+    localStorage.setItem(STREAK_KEY, count);
+    localStorage.setItem(LAST_STUDY_KEY, date);
+  }
+
+  function updateStreakUI() {
+    const { count, lastStudy } = loadStreak();
+    const today = getTodayStr();
+    const badge = document.getElementById('streak-badge');
+    const countEl = document.getElementById('streak-count');
+    const tooltip = document.getElementById('streak-tooltip');
+    const isAlive = lastStudy === today;
+
+    countEl.textContent = count;
+
+    if (isAlive) {
+      badge.classList.add('lit');
+      badge.classList.remove('cold');
+      tooltip.innerHTML = `${count}-day streak 🔥<br><span style="color:var(--muted-foreground);font-size:0.7rem">Keep it up — you studied today!</span>`;
+      if (window._flameSetLit) window._flameSetLit(true);
+    } else {
+      badge.classList.remove('lit');
+      badge.classList.add('cold');
+      tooltip.innerHTML = `${count}-day streak — flame out!<br><span style="color:var(--muted-foreground);font-size:0.7rem">Study a lesson to reignite it</span>`;
+      if (window._flameSetLit) window._flameSetLit(false);
+    }
+  }
+
+  // Clicking the streak badge simulates "study session" for demo
+  document.getElementById('streak-badge').addEventListener('click', () => {
+    const { count, lastStudy } = loadStreak();
+    const today = getTodayStr();
+    const newCount = lastStudy === today ? count : count + 1;
+    saveStreak(newCount, today);
+    updateStreakUI();
+    // burst scale
+    const badge = document.getElementById('streak-badge');
+    badge.style.transition = 'transform 0.15s';
+    badge.style.transform = 'scale(1.18)';
+    setTimeout(() => { badge.style.transform = ''; }, 180);
+  });
+
+  // Also wire Quick Practice CTA
+  document.querySelector('.hero-cta').addEventListener('click', () => {
+    const { count, lastStudy } = loadStreak();
+    const today = getTodayStr();
+    const newCount = lastStudy === today ? count : count + 1;
+    saveStreak(newCount, today);
+    updateStreakUI();
+  });
+
+  updateStreakUI();
+
+  // ── Nav interactions ──
+  // Search modal
+  const searchBtn = document.getElementById('search-btn');
+  const searchModal = document.getElementById('search-modal');
+  const searchInput = document.getElementById('search-input');
+  searchBtn.addEventListener('click', () => {
+    searchModal.classList.add('open');
+    setTimeout(() => searchInput.focus(), 50);
+  });
+  searchModal.addEventListener('click', e => {
+    if (e.target === searchModal) searchModal.classList.remove('open');
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') searchModal.classList.remove('open');
+  });
+
+  // Furigana toggle
+  const furiganaBtn = document.getElementById('furigana-btn');
+  let furiganaOn = false;
+  furiganaBtn.addEventListener('click', () => {
+    furiganaOn = !furiganaOn;
+    furiganaBtn.classList.toggle('active-toggle', furiganaOn);
+    furiganaBtn.title = furiganaOn ? 'Furigana ON — click to hide' : 'Toggle furigana';
+  });
+
+  // Avatar dropdown
+  const avatarWrap = document.getElementById('avatar-wrap');
+  avatarWrap.addEventListener('click', e => {
+    e.stopPropagation();
+    avatarWrap.classList.toggle('open');
+  });
+  document.addEventListener('click', () => avatarWrap.classList.remove('open'));
+
+  // ── Tweaks integration ──
+  const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+    "headlineSize": 100,
+    "pillsVisible": "show",
+    "tint": "navy"
+  }/*EDITMODE-END*/;
+
+  let tweaks = { ...TWEAK_DEFAULTS };
+
+  function applyTweaks() {
+    const h1 = document.getElementById('hero-headline');
+    // headlineSize is a relative scale factor, not absolute px
+    h1.style.fontSize = '';
+
+    const pills = document.querySelector('.feature-pills');
+    pills.style.display = tweaks.pillsVisible === 'show' ? 'flex' : 'none';
+
+    // tint overlay
+    let overlay = document.getElementById('tint-overlay');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.id = 'tint-overlay';
+      overlay.style.cssText = 'position:absolute;inset:0;z-index:1;pointer-events:none;transition:background 0.4s';
+      document.querySelector('.page-wrapper').appendChild(overlay);
+    }
+    if (tweaks.tint === 'navy') overlay.style.background = 'rgba(0,20,50,0.45)';
+    else if (tweaks.tint === 'dark') overlay.style.background = 'rgba(0,0,0,0.5)';
+    else overlay.style.background = 'transparent';
+
+    // sync controls
+    document.getElementById('tweak-size').value = tweaks.headlineSize;
+    document.getElementById('tweak-pills').value = tweaks.pillsVisible;
+    document.getElementById('tweak-tint').value = tweaks.tint;
+  }
+
+  // control listeners
+  document.getElementById('tweak-size').addEventListener('input', e => {
+    tweaks.headlineSize = +e.target.value;
+    applyTweaks();
+    window.parent.postMessage({ type: '__edit_mode_set_keys', edits: { headlineSize: tweaks.headlineSize } }, '*');
+  });
+  document.getElementById('tweak-pills').addEventListener('change', e => {
+    tweaks.pillsVisible = e.target.value;
+    applyTweaks();
+    window.parent.postMessage({ type: '__edit_mode_set_keys', edits: { pillsVisible: tweaks.pillsVisible } }, '*');
+  });
+  document.getElementById('tweak-tint').addEventListener('change', e => {
+    tweaks.tint = e.target.value;
+    applyTweaks();
+    window.parent.postMessage({ type: '__edit_mode_set_keys', edits: { tint: tweaks.tint } }, '*');
+  });
+
+  // edit mode handshake
+  window.addEventListener('message', e => {
+    if (e.data?.type === '__activate_edit_mode') {
+      document.getElementById('tweaks-panel').style.display = 'block';
+    } else if (e.data?.type === '__deactivate_edit_mode') {
+      document.getElementById('tweaks-panel').style.display = 'none';
+    }
+  });
+  window.parent.postMessage({ type: '__edit_mode_available' }, '*');
+
+  applyTweaks();
+</script>
+</body>
+</html>

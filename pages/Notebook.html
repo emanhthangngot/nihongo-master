@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>NihongoMaster — Notebook</title>
+<link rel="stylesheet" href="shared.css"/>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+.nb-page{min-height:100vh;display:flex;flex-direction:column;padding-bottom:80px}
+.nb-body{display:flex;flex:1;min-height:0}
+.nb-sidebar{width:220px;flex-shrink:0;border-right:1px solid var(--border);padding:1.1rem;display:flex;flex-direction:column;gap:.35rem;overflow-y:auto}
+@media(max-width:767px){.nb-sidebar{display:none}}
+.nb-main{flex:1;padding:2rem;overflow-y:auto}
+.coll-item{border-radius:.75rem;padding:.65rem .9rem;cursor:pointer;transition:all .2s;border:1px solid transparent}
+.coll-item:hover{background:rgba(255,255,255,.04)}
+.coll-item.active{background:rgba(249,115,22,.08);border-color:rgba(249,115,22,.3)}
+.nb-item-card{border-radius:1rem;padding:1.25rem;margin-bottom:.85rem;transition:border-color .2s}
+.nb-item-card:hover{border-color:rgba(255,255,255,.15)!important}
+.tag{display:inline-flex;padding:.15rem .55rem;border-radius:9999px;font-size:.68rem;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);color:var(--muted);margin-right:.35rem;margin-bottom:.35rem}
+.item-actions{display:flex;gap:.5rem;margin-top:.85rem;padding-top:.75rem;border-top:1px solid rgba(255,255,255,.05)}
+.add-form{background:var(--surface);border:1px solid var(--border);border-radius:1.1rem;padding:1.25rem;margin-bottom:1.25rem}
+.add-form input,.add-form textarea{width:100%;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:.65rem;padding:.6rem .85rem;color:var(--fg);font-family:var(--font-b);font-size:.875rem;outline:none;margin-bottom:.65rem}
+.add-form input:focus,.add-form textarea:focus{border-color:rgba(249,115,22,.4)}
+.add-form textarea{font-family:var(--font-jp);resize:vertical;min-height:70px}
+.add-form input::placeholder,.add-form textarea::placeholder{color:var(--muted)}
+.empty-state{text-align:center;padding:4rem 2rem}
+.search-nb{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:.75rem;padding:.55rem .9rem;display:flex;align-items:center;gap:.6rem;margin-bottom:1.25rem}
+.search-nb input{background:none;border:none;outline:none;color:var(--fg);font-size:.875rem;font-family:var(--font-b);flex:1}
+.search-nb input::placeholder{color:var(--muted)}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useRef} = React;
+
+const INIT_COLLECTIONS=[
+  {id:1,name:'N4 Grammar',count:8,mastered:3,color:'var(--ember)'},
+  {id:2,name:'N5 Vocabulary',count:24,mastered:18,color:'var(--jade)'},
+  {id:3,name:'JLPT Patterns',count:12,mastered:5,color:'var(--sakura)'},
+  {id:4,name:'Anime Phrases',count:15,mastered:2,color:'hsl(200,80%,60%)'},
+];
+
+const INIT_ITEMS={
+  1:[
+    {id:1,pattern:'〜てから',meaning:'after doing ~',example:'食べてから、歯を磨く。',en:'After eating, brush teeth.',tags:['N4','Grammar','て-form'],srs:false},
+    {id:2,pattern:'〜ている',meaning:'ongoing action / current state',example:'雨が降っている。',en:'It is raining.',tags:['N4','Grammar','Progressive'],srs:true},
+    {id:3,pattern:'〜たことがある',meaning:'have experience of doing ~',example:'日本に行ったことがある。',en:'I have been to Japan.',tags:['N4','Grammar','Experience'],srs:false},
+    {id:4,pattern:'〜てもいい',meaning:'it\'s okay to ~ / may ~',example:'ここに座ってもいいですか？',en:'May I sit here?',tags:['N4','Grammar','Permission'],srs:false},
+    {id:5,pattern:'〜なければならない',meaning:'must ~; have to ~',example:'宿題をしなければならない。',en:'I must do my homework.',tags:['N4','Grammar','Obligation'],srs:true},
+    {id:6,pattern:'〜ようにする',meaning:'try to ~; make an effort to ~',example:'毎日運動するようにしている。',en:'I try to exercise every day.',tags:['N4','Grammar','Effort'],srs:false},
+    {id:7,pattern:'〜はずだ',meaning:'should be ~; supposed to ~',example:'彼は来るはずだ。',en:'He is supposed to come.',tags:['N4','Grammar','Expectation'],srs:true},
+    {id:8,pattern:'〜かもしれない',meaning:'might ~; perhaps ~',example:'明日、雨が降るかもしれない。',en:'It might rain tomorrow.',tags:['N4','Grammar','Possibility'],srs:false},
+  ],
+  2:[
+    {id:1,pattern:'食べる',meaning:'to eat',example:'毎日野菜を食べる。',en:'I eat vegetables every day.',tags:['N5','Verb'],srs:true},
+    {id:2,pattern:'先生',meaning:'teacher; master',example:'田中先生は優しい。',en:'Teacher Tanaka is kind.',tags:['N5','Noun'],srs:false},
+    {id:3,pattern:'難しい',meaning:'difficult; hard',example:'この問題は難しい。',en:'This problem is difficult.',tags:['N5','Adjective'],srs:true},
+  ],
+  3:[],4:[],
+};
+
+function Navbar(){
+  return(
+    <nav className="navbar lg">
+      <div className="navbar-inner">
+        <a href="../Velorah Hero.html" className="logo">Nihongo<em style={{fontStyle:'normal',color:'var(--muted)'}}>Master</em><sup>®</sup></a>
+        <ul className="nav-links">
+          <li><a href="Dashboard.html">Dashboard</a></li>
+          <li><a href="Learning Path.html">Path</a></li>
+          <li><a href="AI Tutor.html">AI Tutor</a></li>
+          <li><a href="Flashcards.html">Flashcards</a></li>
+          <li><a href="Dictionary.html">Dictionary</a></li>
+        </ul>
+        <div className="nav-right">
+          <div className="streak keep-mobile">🔥 12</div>
+          <button className="lg nav-cta btn">Quick Practice</button>
+          <div className="avatar">你</div>
+        </div>
+      </div>
+    </nav>
+  );
+}
+
+function App(){
+  const [collections,setCollections]=useState(INIT_COLLECTIONS);
+  const [items,setItems]=useState(INIT_ITEMS);
+  const [activeColl,setActiveColl]=useState(1);
+  const [search,setSearch]=useState('');
+  const [showAdd,setShowAdd]=useState(false);
+  const [newItem,setNewItem]=useState({pattern:'',meaning:'',example:'',en:''});
+  const [toasts,setToasts]=useState([]);
+  const [srsState,setSrsState]=useState({});
+
+  const addToast=msg=>{const id=Date.now();setToasts(t=>[...t,{id,msg}]);setTimeout(()=>setToasts(t=>t.filter(x=>x.id!==id)),3500);};
+
+  const coll=collections.find(c=>c.id===activeColl);
+  const collItems=(items[activeColl]||[]).filter(item=>
+    !search||item.pattern.includes(search)||item.meaning.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const deleteItem=id=>{
+    setItems(prev=>({...prev,[activeColl]:prev[activeColl].filter(x=>x.id!==id)}));
+    setCollections(prev=>prev.map(c=>c.id===activeColl?{...c,count:c.count-1}:c));
+  };
+  const toggleSRS=(item)=>{
+    const newSRS=!item.srs;
+    setItems(prev=>({...prev,[activeColl]:prev[activeColl].map(x=>x.id===item.id?{...x,srs:newSRS}:x)}));
+    addToast(newSRS?`Added "${item.pattern}" to SRS ✓`:`Removed "${item.pattern}" from SRS`);
+  };
+  const addItem=()=>{
+    if(!newItem.pattern)return;
+    const id=Date.now();
+    const item={id,...newItem,tags:[coll.name.split(' ')[0]],srs:false};
+    setItems(prev=>({...prev,[activeColl]:[...(prev[activeColl]||[]),item]}));
+    setCollections(prev=>prev.map(c=>c.id===activeColl?{...c,count:c.count+1}:c));
+    setNewItem({pattern:'',meaning:'',example:'',en:''});
+    setShowAdd(false);
+    addToast('Entry added ✓');
+  };
+  const addCollection=()=>{
+    const id=Date.now();
+    const name=`Collection ${collections.length+1}`;
+    setCollections(c=>[...c,{id,name,count:0,mastered:0,color:'var(--muted)'}]);
+    setItems(prev=>({...prev,[id]:[]}));
+    setActiveColl(id);
+  };
+
+  return(
+    <div className="nb-page">
+      <Navbar/>
+      <div className="nb-body">
+        {/* Sidebar */}
+        <aside className="nb-sidebar">
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'.5rem'}}>
+            <span style={{fontSize:'.7rem',color:'var(--muted)',textTransform:'uppercase',letterSpacing:'.1em'}}>Collections</span>
+            <button className="icon-btn" style={{padding:'.2rem .4rem',fontSize:'.9rem'}} onClick={addCollection} title="New collection">＋</button>
+          </div>
+          {collections.map(c=>(
+            <div key={c.id} className={`coll-item${activeColl===c.id?' active':''}`} onClick={()=>{setActiveColl(c.id);setShowAdd(false);}}>
+              <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+                <span style={{fontSize:'.875rem'}}>{c.name}</span>
+                <span style={{fontSize:'.68rem',padding:'.15rem .45rem',borderRadius:'9999px',background:'rgba(255,255,255,.06)',color:'var(--muted)'}}>{c.count}</span>
+              </div>
+              {c.mastered>0&&(
+                <div style={{marginTop:'.35rem'}}>
+                  <div className="xpbar-track" style={{height:'3px'}}>
+                    <div className="xpbar-fill" style={{width:`${(c.mastered/c.count)*100}%`,background:c.color}}/>
+                  </div>
+                  <div style={{fontSize:'.62rem',color:'var(--muted)',marginTop:'.2rem'}}>{c.mastered}/{c.count} in SRS</div>
+                </div>
+              )}
+            </div>
+          ))}
+        </aside>
+
+        {/* Main */}
+        <main className="nb-main">
+          {/* Header */}
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'1.25rem',flexWrap:'wrap',gap:'.75rem'}} className="fr">
+            <div style={{fontFamily:'var(--font-d)',fontSize:'1.75rem'}}>{coll?.name}</div>
+            <div style={{display:'flex',gap:'.6rem'}}>
+              <button className="lg btn btn-sm" onClick={()=>setShowAdd(s=>!s)}>{showAdd?'Cancel':'＋ Add Entry'}</button>
+              <a href="Flashcards.html" className="lg btn btn-sm btn-ember">Review SRS →</a>
+            </div>
+          </div>
+
+          {/* Add form */}
+          {showAdd&&(
+            <div className="add-form fr">
+              <div style={{fontFamily:'var(--font-d)',fontSize:'1rem',marginBottom:'1rem'}}>New Entry</div>
+              <input placeholder="Grammar pattern / Word (e.g. 〜てから)" value={newItem.pattern} onChange={e=>setNewItem(n=>({...n,pattern:e.target.value}))}/>
+              <input placeholder="Meaning in English" value={newItem.meaning} onChange={e=>setNewItem(n=>({...n,meaning:e.target.value}))}/>
+              <textarea placeholder="Example sentence in Japanese..." value={newItem.example} onChange={e=>setNewItem(n=>({...n,example:e.target.value}))}/>
+              <input placeholder="English translation of example" value={newItem.en} onChange={e=>setNewItem(n=>({...n,en:e.target.value}))}/>
+              <button className="lg btn btn-ember" onClick={addItem} style={{width:'100%',padding:'.7rem'}}>Add to Collection</button>
+            </div>
+          )}
+
+          {/* Search */}
+          <div className="search-nb">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input placeholder="Search entries..." value={search} onChange={e=>setSearch(e.target.value)}/>
+            {search&&<button style={{background:'none',border:'none',color:'var(--muted)',cursor:'pointer'}} onClick={()=>setSearch('')}>✕</button>}
+          </div>
+
+          {/* Items */}
+          {collItems.length===0?(
+            <div className="empty-state">
+              <div style={{fontFamily:'var(--font-jp)',fontSize:'6rem',color:'rgba(255,255,255,.06)',lineHeight:1}}>無</div>
+              <div style={{fontFamily:'var(--font-d)',fontSize:'1.5rem',color:'var(--muted)',marginTop:'.75rem'}}>No entries yet.</div>
+              <div style={{color:'var(--muted)',fontSize:'.85rem',marginTop:'.5rem'}}>Add your first entry to start building your collection.</div>
+              <button className="lg btn btn-ember" style={{marginTop:'1.5rem'}} onClick={()=>setShowAdd(true)}>Add your first entry</button>
+            </div>
+          ):(
+            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(340px,1fr))',gap:'1rem'}} className="fr1">
+              {collItems.map(item=>(
+                <div key={item.id} className="nb-item-card lg" style={{border:'1px solid rgba(255,255,255,.07)'}}>
+                  <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:'.75rem'}}>
+                    <div style={{fontFamily:'var(--font-m)',fontSize:'1.2rem',color:'var(--fg)',lineHeight:1.2}}>{item.pattern}</div>
+                    {item.srs&&<span style={{fontSize:'.65rem',padding:'.2rem .5rem',borderRadius:'9999px',background:'rgba(249,115,22,.15)',color:'var(--ember)',border:'1px solid rgba(249,115,22,.3)',flexShrink:0}}>In SRS</span>}
+                  </div>
+                  <div style={{fontSize:'.85rem',color:'var(--muted)',marginTop:'.35rem'}}>{item.meaning}</div>
+                  {item.example&&(
+                    <div style={{marginTop:'.85rem',padding:'.75rem',borderRadius:'.65rem',background:'rgba(255,255,255,.03)',border:'1px solid rgba(255,255,255,.05)'}}>
+                      <div style={{fontFamily:'var(--font-jp)',fontSize:'.95rem',lineHeight:1.7}}>{item.example}</div>
+                      {item.en&&<div style={{fontSize:'.78rem',color:'var(--muted)',marginTop:'.3rem'}}>{item.en}</div>}
+                    </div>
+                  )}
+                  <div style={{marginTop:'.75rem',flexWrap:'wrap',display:'flex'}}>
+                    {item.tags.map(t=><span key={t} className="tag">{t}</span>)}
+                  </div>
+                  <div className="item-actions">
+                    <button className="lg btn btn-sm" onClick={()=>toggleSRS(item)} style={{fontSize:'.72rem'}}>
+                      {item.srs?'Remove SRS':'→ SRS'}
+                    </button>
+                    <button className="lg btn btn-sm" style={{fontSize:'.72rem'}}>Edit</button>
+                    <button style={{background:'none',border:'none',color:'rgba(239,68,68,.5)',cursor:'pointer',fontSize:'.72rem',padding:'.35rem .65rem',borderRadius:'.5rem',marginLeft:'auto',transition:'color .2s'}} onClick={()=>deleteItem(item.id)}>Delete</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </main>
+      </div>
+
+      {/* Toasts */}
+      <div className="toast-container">
+        {toasts.map(t=>(
+          <div key={t.id} className="toast lg" style={{background:'rgba(8,20,36,.95)',border:'1px solid rgba(249,115,22,.3)',color:'var(--fg)'}}>{t.msg}</div>
+        ))}
+      </div>
+
+      <nav className="mobile-nav lg">
+        <a href="Dashboard.html"><span>🏠</span><span>Home</span></a>
+        <a href="Learning Path.html"><span>📚</span><span>Path</span></a>
+        <a href="Flashcards.html"><span>🃏</span><span>Cards</span></a>
+        <a href="AI Tutor.html"><span>🤖</span><span>Tutor</span></a>
+        <a href="Dictionary.html"><span style={{fontFamily:'var(--font-jp)'}}>辞</span><span>Dict</span></a>
+      </nav>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

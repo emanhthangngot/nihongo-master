@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>NihongoMaster — Dictionary</title>
+<link rel="stylesheet" href="shared.css"/>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+.dict-page{min-height:100vh;padding-bottom:80px}
+.hero-search{padding:5rem 2rem 3rem;text-align:center;position:relative}
+.deco-char{position:absolute;top:1rem;left:50%;transform:translateX(-50%);font-family:var(--font-jp);font-size:10rem;color:rgba(255,255,255,.04);pointer-events:none;line-height:1;z-index:0}
+.search-wrap{position:relative;z-index:1}
+.search-bar{border-radius:1.25rem;padding:1rem 1.5rem;display:flex;align-items:center;gap:.75rem;max-width:620px;margin:.75rem auto 0;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.search-input{flex:1;background:none;border:none;outline:none;color:var(--fg);font-size:1.1rem;font-family:var(--font-jp)}
+.search-input::placeholder{color:var(--muted)}
+.suggest-drop{position:absolute;top:100%;left:0;right:0;border-radius:1rem;border:1px solid var(--border);overflow:hidden;z-index:10;margin-top:.35rem;background:var(--surface-raised)}
+.suggest-item{padding:.75rem 1.25rem;cursor:pointer;display:flex;align-items:center;gap:.75rem;transition:background .15s}
+.suggest-item:hover{background:rgba(255,255,255,.06)}
+.pills-row{display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap;margin-top:1.25rem}
+.dict-main{max-width:64rem;margin:0 auto;padding:0 2rem 2rem}
+.entry-card{border-radius:1.25rem;padding:2rem;margin-bottom:1.25rem}
+.pitch-graph{margin:1.25rem 0}
+.mora-row{display:flex;gap:0;align-items:flex-end}
+.mora{display:flex;flex-direction:column;align-items:center;width:40px}
+.mora-char{font-family:var(--font-jp);font-size:.9rem;color:var(--fg)}
+.mora-dot{width:10px;height:10px;border-radius:9999px;background:var(--ember);margin:4px auto}
+.pitch-line{display:flex;align-items:center;height:40px;position:relative}
+.ex-card{border-radius:.875rem;padding:1rem 1.25rem;margin-bottom:.75rem}
+.kanji-header{text-align:center;padding:3rem 2rem 2rem;max-width:600px;margin:0 auto}
+.radical-row{display:flex;align-items:center;justify-content:center;gap:1rem;margin:1.5rem 0;flex-wrap:wrap}
+.radical-tile{border-radius:.875rem;padding:1rem 1.25rem;text-align:center;min-width:80px}
+.related-scroll{display:flex;gap:.6rem;overflow-x:auto;padding:.5rem 0;flex-wrap:wrap}
+.related-pill{border-radius:9999px;padding:.4rem 1rem;font-family:var(--font-jp);font-size:1rem;cursor:pointer;white-space:nowrap;border:1px solid var(--border);background:rgba(255,255,255,.03);transition:border-color .2s}
+.related-pill:hover{border-color:var(--ember)}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useRef,useEffect} = React;
+
+const WORDS=[
+  {word:'食べる',reading:'たべる',romaji:'taberu',pos:'verb (godan)',jlpt:'N5',
+   morae:['た','べ','る'],pattern:[0,1,0],patternName:'Nakadaka',
+   meanings:['(transitive) to eat','(figurative) to consume, to live on'],
+   examples:[
+     {jp:'毎日野菜を食べる。',en:'I eat vegetables every day.',jlpt:'N5'},
+     {jp:'もっと食べたい。',en:'I want to eat more.',jlpt:'N5'},
+     {jp:'何を食べましたか？',en:'What did you eat?',jlpt:'N5'},
+   ],
+   relatedKanji:['食','食堂','食事','朝食','夕食']},
+  {word:'勉強',reading:'べんきょう',romaji:'benkyō',pos:'noun / suru-verb',jlpt:'N5',
+   morae:['べ','ん','き','ょ','う'],pattern:[0,1,1,1,0],patternName:'Heiban',
+   meanings:['study','to study (when used with する)'],
+   examples:[
+     {jp:'日本語を勉強しています。',en:'I am studying Japanese.',jlpt:'N5'},
+     {jp:'勉強は楽しい。',en:'Studying is fun.',jlpt:'N5'},
+   ],
+   relatedKanji:['勉','強','学','習','練']},
+  {word:'難しい',reading:'むずかしい',romaji:'muzukashii',pos:'i-adjective',jlpt:'N5',
+   morae:['む','ず','か','し','い'],pattern:[0,1,1,1,1],patternName:'Heiban',
+   meanings:['difficult; hard','complicated; complex'],
+   examples:[
+     {jp:'この問題は難しい。',en:'This problem is difficult.',jlpt:'N5'},
+     {jp:'日本語は難しくない。',en:'Japanese is not difficult.',jlpt:'N5'},
+   ],
+   relatedKanji:['難','易','困','苦','辛']},
+];
+
+const FEATURED=[
+  {word:'桜',reading:'さくら',romaji:'sakura',meaning:'cherry blossom',jlpt:'N4'},
+  {word:'侍',reading:'さむらい',romaji:'samurai',meaning:'samurai warrior',jlpt:'N3'},
+  {word:'静寂',reading:'せいじゃく',romaji:'seijaku',meaning:'silence; stillness',jlpt:'N1'},
+  {word:'間',reading:'ま',romaji:'ma',meaning:'space; pause; room',jlpt:'N3'},
+  {word:'物語',reading:'ものがたり',romaji:'monogatari',meaning:'tale; story',jlpt:'N4'},
+  {word:'風情',reading:'ふぜい',romaji:'fuzei',meaning:'elegance; taste; charm',jlpt:'N1'},
+];
+
+function AudioBtn({size=16}){
+  return(
+    <button className="icon-btn" style={{padding:'.3rem'}} title="Play audio">
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+      </svg>
+    </button>
+  );
+}
+
+function PitchGraph({morae,pattern}){
+  const HIGH=8,LOW=32,W=40;
+  const points=morae.map((m,i)=>({x:i*W+20,y:pattern[i]?HIGH:LOW}));
+  const d=points.map((p,i)=>i===0?`M${p.x},${p.y}`:`L${p.x},${p.y}`).join(' ');
+  return(
+    <div className="pitch-graph">
+      <svg width={morae.length*W+20} height={50} style={{overflow:'visible'}}>
+        <path d={d} stroke="var(--ember)" strokeWidth="2" fill="none"/>
+        {points.map((p,i)=>(
+          <g key={i}>
+            <circle cx={p.x} cy={p.y} r="5" fill="var(--ember)"/>
+            <text x={p.x} y={48} textAnchor="middle" fontSize="12" fill="var(--muted)" fontFamily="var(--font-jp)">{morae[i]}</text>
+          </g>
+        ))}
+      </svg>
+    </div>
+  );
+}
+
+function WordEntry({entry,onClose}){
+  const [toast,setToast]=useState('');
+  const addSRS=()=>{setToast('Added to SRS ✓');setTimeout(()=>setToast(''),3000);};
+  return(
+    <div className="fr">
+      <button onClick={onClose} style={{background:'none',border:'none',color:'var(--muted)',cursor:'pointer',marginBottom:'1rem',fontSize:'.8rem'}}>← Back to search</button>
+      <div className="lg entry-card" style={{borderRadius:'1.25rem'}}>
+        {/* Header */}
+        <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:'1rem',flexWrap:'wrap'}}>
+          <div>
+            <div style={{display:'flex',alignItems:'center',gap:'.75rem'}}>
+              <span style={{fontFamily:'var(--font-jp)',fontSize:'3rem',lineHeight:1}}>{entry.word}</span>
+              <AudioBtn size={20}/>
+            </div>
+            <div style={{fontFamily:'var(--font-m)',fontSize:'.8125rem',color:'var(--muted)',marginTop:'.35rem'}}>{entry.romaji} · {entry.pos}</div>
+            <div style={{marginTop:'.5rem'}}><span className={`jlpt ${entry.jlpt.toLowerCase()}`}>{entry.jlpt}</span></div>
+          </div>
+          <div style={{display:'flex',gap:'.5rem',flexWrap:'wrap'}}>
+            <button className="lg btn btn-sm" onClick={addSRS}>+ SRS</button>
+            <button className="lg btn btn-sm">📓 Notes</button>
+            {toast&&<span style={{fontSize:'.75rem',color:'var(--jade)',alignSelf:'center'}}>✓ {toast}</span>}
+          </div>
+        </div>
+
+        {/* Pitch accent */}
+        <div style={{marginTop:'1.25rem',paddingTop:'1.25rem',borderTop:'1px solid var(--border)'}}>
+          <div style={{fontSize:'.7rem',textTransform:'uppercase',letterSpacing:'.1em',color:'var(--muted)',marginBottom:'.5rem'}}>Pitch Accent</div>
+          <PitchGraph morae={entry.morae} pattern={entry.pattern}/>
+          <div style={{fontSize:'.75rem',color:'var(--muted)'}}>{entry.patternName}</div>
+        </div>
+
+        {/* Meanings */}
+        <div style={{marginTop:'1.25rem',paddingTop:'1.25rem',borderTop:'1px solid var(--border)'}}>
+          <div style={{fontSize:'.7rem',textTransform:'uppercase',letterSpacing:'.1em',color:'var(--muted)',marginBottom:'.75rem'}}>Meanings</div>
+          {entry.meanings.map((m,i)=>(
+            <div key={i} style={{fontFamily:'var(--font-d)',fontSize:'1.25rem',marginBottom:'.35rem'}}>
+              <span style={{fontSize:'.8rem',color:'var(--muted)',fontFamily:'var(--font-b)',marginRight:'.5rem'}}>{i+1}.</span>{m}
+            </div>
+          ))}
+        </div>
+
+        {/* Examples */}
+        <div style={{marginTop:'1.25rem',paddingTop:'1.25rem',borderTop:'1px solid var(--border)'}}>
+          <div style={{fontSize:'.7rem',textTransform:'uppercase',letterSpacing:'.1em',color:'var(--muted)',marginBottom:'.75rem'}}>Example Sentences</div>
+          {entry.examples.map((ex,i)=>(
+            <div key={i} className="lg ex-card" style={{marginBottom:'.75rem',borderRadius:'.875rem'}}>
+              <div style={{display:'flex',alignItems:'center',gap:'.5rem'}}>
+                <span style={{fontFamily:'var(--font-jp)',fontSize:'1rem'}}>{ex.jp}</span>
+                <AudioBtn/>
+                <span className={`jlpt ${ex.jlpt.toLowerCase()}`} style={{marginLeft:'auto'}}>{ex.jlpt}</span>
+              </div>
+              <div style={{fontSize:'.8125rem',color:'var(--muted)',marginTop:'.4rem'}}>{ex.en}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Related */}
+        <div style={{marginTop:'1.25rem',paddingTop:'1.25rem',borderTop:'1px solid var(--border)'}}>
+          <div style={{fontSize:'.7rem',textTransform:'uppercase',letterSpacing:'.1em',color:'var(--muted)',marginBottom:'.75rem'}}>Related Words</div>
+          <div className="related-scroll">
+            {entry.relatedKanji.map(r=>(
+              <div key={r} className="related-pill lg">{r}</div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Navbar(){
+  return(
+    <nav className="navbar lg">
+      <div className="navbar-inner">
+        <a href="../Velorah Hero.html" className="logo">Nihongo<em style={{fontStyle:'normal',color:'var(--muted)'}}>Master</em><sup>®</sup></a>
+        <ul className="nav-links">
+          <li><a href="Dashboard.html">Dashboard</a></li>
+          <li><a href="Learning Path.html">Path</a></li>
+          <li><a href="AI Tutor.html">AI Tutor</a></li>
+          <li><a href="Flashcards.html">Flashcards</a></li>
+          <li><a href="Dictionary.html" className="active">Dictionary</a></li>
+        </ul>
+        <div className="nav-right">
+          <div className="streak keep-mobile">🔥 12</div>
+          <button className="lg nav-cta btn">Quick Practice</button>
+          <div className="avatar">你</div>
+        </div>
+      </div>
+    </nav>
+  );
+}
+
+function App(){
+  const [query,setQuery]=useState('');
+  const [selected,setSelected]=useState(null);
+  const [showSuggest,setShowSuggest]=useState(false);
+  const [activeFilter,setActiveFilter]=useState(null);
+
+  const suggestions=query.length>0?WORDS.filter(w=>
+    w.word.includes(query)||w.romaji.toLowerCase().includes(query.toLowerCase())||
+    w.reading.includes(query)||w.meanings.some(m=>m.toLowerCase().includes(query.toLowerCase()))
+  ):[];
+
+  return(
+    <div className="dict-page">
+      <Navbar/>
+      {!selected?(
+        <>
+          <div className="hero-search">
+            <div className="deco-char">辞</div>
+            <div className="search-wrap">
+              <div style={{fontFamily:'var(--font-d)',fontSize:'3rem',lineHeight:1}} className="fr">Dictionary</div>
+              <div style={{color:'var(--muted)',marginTop:'.5rem',fontSize:'.9rem'}} className="fr1">Search kanji, vocabulary, or grammar</div>
+              <div className="search-bar" style={{position:'relative'}}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input className="search-input" placeholder="食べる, taberu, to eat..." value={query}
+                  onChange={e=>{setQuery(e.target.value);setShowSuggest(true);}}
+                  onFocus={()=>setShowSuggest(true)}
+                  onBlur={()=>setTimeout(()=>setShowSuggest(false),150)}
+                />
+                {query&&<button style={{background:'none',border:'none',color:'var(--muted)',cursor:'pointer',fontSize:'1.1rem'}} onClick={()=>setQuery('')}>✕</button>}
+                {showSuggest&&suggestions.length>0&&(
+                  <div className="suggest-drop">
+                    {suggestions.map(w=>(
+                      <div key={w.word} className="suggest-item" onClick={()=>{setSelected(w);setShowSuggest(false);}}>
+                        <span style={{fontFamily:'var(--font-jp)',fontSize:'1.2rem',width:'50px'}}>{w.word}</span>
+                        <div>
+                          <div style={{fontSize:'.8rem',color:'var(--muted)'}}>{w.romaji}</div>
+                          <div style={{fontSize:'.8rem'}}>{w.meanings[0]}</div>
+                        </div>
+                        <span className={`jlpt ${w.jlpt.toLowerCase()}`} style={{marginLeft:'auto'}}>{w.jlpt}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div className="pills-row fr2">
+                {['N5','N4','N3','N2','N1','Verbs','Adjectives','Particles'].map(f=>(
+                  <button key={f} className={`pill${activeFilter===f?' active':''}`} onClick={()=>setActiveFilter(f===activeFilter?null:f)}>{f}</button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="dict-main">
+            <div style={{fontFamily:'var(--font-d)',fontSize:'1.1rem',marginBottom:'1rem',color:'var(--muted)'}} className="fr3">Featured Entries</div>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(180px,1fr))',gap:'1rem'}} className="fr3">
+              {FEATURED.map(f=>(
+                <div key={f.word} className="lg" style={{borderRadius:'.875rem',padding:'1.1rem',cursor:'pointer',transition:'transform .2s'}}
+                  onClick={()=>{const found=WORDS.find(w=>w.word===f.word);setSelected(found||{...f,morae:f.reading.split(''),pattern:f.reading.split('').map((_,i)=>i>0?1:0),patternName:'Heiban',meanings:[f.meaning],examples:[],relatedKanji:[]});}}>
+                  <div style={{fontFamily:'var(--font-jp)',fontSize:'2rem',lineHeight:1}}>{f.word}</div>
+                  <div style={{fontFamily:'var(--font-m)',fontSize:'.75rem',color:'var(--muted)',marginTop:'.3rem'}}>{f.romaji}</div>
+                  <div style={{fontSize:'.8rem',marginTop:'.4rem',color:'var(--fg)'}}>{f.meaning}</div>
+                  <span className={`jlpt ${f.jlpt.toLowerCase()}`} style={{marginTop:'.6rem',display:'inline-flex'}}>{f.jlpt}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
+      ):(
+        <div className="dict-main" style={{paddingTop:'1.5rem'}}>
+          <WordEntry entry={selected} onClose={()=>setSelected(null)}/>
+        </div>
+      )}
+
+      <nav className="mobile-nav lg">
+        <a href="Dashboard.html"><span>🏠</span><span>Home</span></a>
+        <a href="Learning Path.html"><span>📚</span><span>Path</span></a>
+        <a href="Flashcards.html"><span>🃏</span><span>Cards</span></a>
+        <a href="AI Tutor.html"><span>🤖</span><span>Tutor</span></a>
+        <a href="Dictionary.html" className="active"><span style={{fontFamily:'var(--font-jp)'}}>辞</span><span>Dict</span></a>
+      </nav>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
