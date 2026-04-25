@@ -106,9 +106,12 @@ function Step3({ goal: _goal, level: _level }: { goal: string; level: string }) 
   const navigate = useNavigate()
   const [qIdx, setQIdx] = useState(0)
   const [answers, setAnswers] = useState<Record<number, number>>({})
-  const [done, setDone] = useState(false)
+  
+  // If the target level is N5, they are a beginner, so skip the placement test
+  const [done, setDone] = useState(_level === 'N5')
+  
   const q = QUESTIONS[qIdx]
-  const progress = (qIdx / QUESTIONS.length) * 100
+  const progress = done ? 100 : (qIdx / QUESTIONS.length) * 100
 
   const answer = (oi: number) => {
     if (answers[qIdx] !== undefined) return
@@ -120,8 +123,8 @@ function Step3({ goal: _goal, level: _level }: { goal: string; level: string }) 
   }
 
   const correct = Object.entries(answers).filter(([qi, oi]) => QUESTIONS[+qi].correct === oi).length
-  const pct = Math.round((correct / QUESTIONS.length) * 100)
-  const result = pct >= 75 ? 'N4' : 'N5'
+  const pct = Object.keys(answers).length > 0 ? Math.round((correct / QUESTIONS.length) * 100) : 0
+  const result = _level === 'N5' ? 'N5' : pct >= 75 ? 'N4' : 'N5'
 
   const pathItems = [
     `Personalized ${result} skill tree`,

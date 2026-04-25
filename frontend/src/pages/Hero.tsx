@@ -18,13 +18,18 @@ const STATS = [
 
 export default function Hero() {
   return (
-    <div className="min-h-screen flex flex-col relative overflow-hidden"
-      style={{ background: 'radial-gradient(ellipse at 50% -10%, hsl(var(--accent-ember) / 0.12) 0%, transparent 55%), hsl(var(--background))' }}>
+    <div className="min-h-screen flex flex-col relative overflow-hidden bg-background">
+      {/* Video Background */}
+      <video 
+        className="absolute inset-0 w-full h-full object-cover z-0" 
+        autoPlay 
+        loop 
+        muted 
+        playsInline
+      >
+        <source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260314_131748_f2ca2a28-fed7-44c8-b9a9-bd9acdd5ec31.mp4" type="video/mp4" />
+      </video>
 
-      {/* Large decorative character */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none overflow-hidden">
-        <span className="jp leading-none" style={{ fontSize: '36rem', color: 'rgba(255,255,255,0.012)' }}>日</span>
-      </div>
 
       {/* Navbar */}
       <nav className="liquid-glass relative z-50 border-b border-white/8">
