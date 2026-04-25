@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>NihongoMaster — AI Tutor</title>
+<link rel="stylesheet" href="shared.css"/>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+.tutor-page{height:100vh;display:flex;flex-direction:column;overflow:hidden}
+.tutor-body{display:flex;flex:1;min-height:0}
+.sidebar{width:260px;flex-shrink:0;border-right:1px solid var(--border);display:flex;flex-direction:column;padding:1rem;gap:.5rem;overflow-y:auto}
+@media(max-width:767px){.sidebar{display:none}}
+.chat-main{flex:1;display:flex;flex-direction:column;min-width:0}
+.chat-header{padding:1rem 1.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:.75rem}
+.sensei-avatar{width:2.5rem;height:2.5rem;border-radius:9999px;background:linear-gradient(135deg,rgba(249,115,22,.3),rgba(249,115,22,.1));border:1px solid rgba(249,115,22,.3);display:flex;align-items:center;justify-content:center;font-family:var(--font-jp);font-size:1rem;color:var(--ember)}
+.online-dot{width:7px;height:7px;border-radius:9999px;background:hsl(162,60%,45%);box-shadow:0 0 6px hsl(162,60%,45%);display:inline-block;margin-right:.4rem}
+.messages{flex:1;overflow-y:auto;padding:1.5rem;display:flex;flex-direction:column;gap:1.25rem}
+.msg{display:flex;gap:.75rem;max-width:100%}
+.msg.user{flex-direction:row-reverse}
+.bubble{border-radius:1.25rem;padding:.85rem 1.1rem;max-width:600px;font-size:.9rem;line-height:1.65}
+.bubble.user{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-top-right-radius:.35rem}
+.bubble.ai{background:var(--surface);border:1px solid var(--border);border-top-left-radius:.35rem}
+.grammar-card{background:var(--surface-raised);border:1px solid var(--border);border-radius:.875rem;padding:1rem;margin-top:.75rem;font-size:.85rem}
+.grammar-card-header{font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:.5rem}
+.grammar-title{font-family:var(--font-jp);font-size:1.1rem;color:var(--fg);margin-bottom:.3rem}
+.grammar-ex{font-family:var(--font-jp);font-size:.9rem;margin:.5rem 0 .25rem;padding:.5rem;background:rgba(255,255,255,.03);border-radius:.5rem}
+.grammar-actions{display:flex;gap:.5rem;margin-top:.75rem}
+.cursor-blink{display:inline-block;width:2px;height:1em;background:var(--ember);margin-left:2px;animation:blink .8s ease-in-out infinite;vertical-align:middle}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+.input-area{padding:1rem 1.5rem;border-top:1px solid var(--border)}
+.input-box{border-radius:1rem;padding:.75rem 1rem;display:flex;align-items:flex-end;gap:.75rem;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08)}
+textarea{flex:1;background:none;border:none;outline:none;color:var(--fg);font-family:var(--font-jp);font-size:.9rem;resize:none;max-height:120px;line-height:1.5}
+textarea::placeholder{color:var(--muted)}
+.send-btn{border:none;border-radius:.75rem;padding:.5rem 1rem;font-size:.8125rem;font-family:var(--font-b);cursor:pointer;transition:all .2s;flex-shrink:0;color:var(--fg)}
+.send-btn.active{background:rgba(249,115,22,.2);border:1px solid rgba(249,115,22,.5);color:var(--ember)}
+.send-btn.inactive{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);color:var(--muted);pointer-events:none}
+.conv-item{border-radius:.75rem;padding:.65rem .85rem;cursor:pointer;transition:background .2s}
+.conv-item:hover,.conv-item.active{background:rgba(255,255,255,.05)}
+.toast-area{position:fixed;bottom:1.5rem;right:1.5rem;z-index:999}
+.toast-item{background:rgba(10,25,40,.95);border:1px solid rgba(249,115,22,.4);border-radius:.75rem;padding:.65rem 1rem;font-size:.8rem;margin-top:.5rem;animation:slide-right .3s ease-out both;color:var(--fg)}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useEffect,useRef,useCallback} = React;
+
+const CONVS=[
+  {id:1,title:'て-form Practice',time:'2h ago'},
+  {id:2,title:'Particle が vs は',time:'Yesterday'},
+  {id:3,title:'JLPT N4 Vocabulary',time:'2 days ago'},
+  {id:4,title:'Counting in Japanese',time:'3 days ago'},
+];
+
+const INITIAL_MSGS=[
+  {role:'ai',content:`こんにちは！I'm your Japanese Sensei. 🌸
+
+I can help you with grammar explanations, vocabulary practice, reading comprehension, and natural conversation.
+
+What would you like to study today? Try asking me something like:
+
+• "Explain the て-form to me"
+• "Let's practice N4 vocabulary"  
+• "How do I say 'I've been studying for 3 hours'?"`,grammar:null},
+];
+
+const AI_RESPONSES=[
+  {trigger:'て',content:`Great question! The **て-form** is one of the most essential forms in Japanese.
+
+The て-form (te-form) connects verbs and creates a variety of structures:`,
+   grammar:{title:'～ている',meaning:'ongoing action or current state',example:'雨が降っている。',en:'It is raining. (ongoing)'}},
+  {trigger:'particle',content:`Ah, the classic は vs が question! This confuses many learners.
+
+**は (wa)** marks the topic — what you're talking about.  
+**が (ga)** marks the subject — who or what performs the action.`,
+   grammar:{title:'は vs が',meaning:'topic marker vs subject marker',example:'私は学生です。vs 私が犯人だ。',en:'I am a student. vs I am the culprit.'}},
+  {trigger:'vocabulary',content:`Let's practice some N4 vocabulary! I'll give you words with context sentences.
+
+Here are 5 essential N4 words to start:
+
+① **予定** (yotei) — plan, schedule  
+② **経験** (keiken) — experience  
+③ **連絡** (renraku) — contact, communication  
+④ **確認** (kakunin) — confirmation  
+⑤ **準備** (junbi) — preparation`,grammar:null},
+  {trigger:'default',content:`That's a great topic to explore! 
+
+In Japanese, context is everything. Let me break this down step by step with examples from natural Japanese.
+
+Would you like me to:
+1. Explain the grammar structure
+2. Practice with example sentences
+3. Give you an exercise to try`,grammar:null},
+];
+
+function getAIResponse(msg){
+  const lower=msg.toLowerCase();
+  if(lower.includes('て')||lower.includes('te-form')||lower.includes('teform'))return AI_RESPONSES[0];
+  if(lower.includes('particle')||lower.includes('は')||lower.includes('が'))return AI_RESPONSES[1];
+  if(lower.includes('vocab')||lower.includes('word')||lower.includes('単語'))return AI_RESPONSES[2];
+  return AI_RESPONSES[3];
+}
+
+function Navbar(){
+  return(
+    <nav className="navbar lg">
+      <div className="navbar-inner">
+        <a href="../Velorah Hero.html" className="logo">Nihongo<em style={{fontStyle:'normal',color:'var(--muted)'}}>Master</em><sup>®</sup></a>
+        <ul className="nav-links">
+          <li><a href="Dashboard.html">Dashboard</a></li>
+          <li><a href="Learning Path.html">Path</a></li>
+          <li><a href="AI Tutor.html" className="active">AI Tutor</a></li>
+          <li><a href="Flashcards.html">Flashcards</a></li>
+          <li><a href="Dictionary.html">Dictionary</a></li>
+        </ul>
+        <div className="nav-right">
+          <div className="streak keep-mobile">🔥 12</div>
+          <button className="lg nav-cta btn">Quick Practice</button>
+          <div className="avatar">你</div>
+        </div>
+      </div>
+    </nav>
+  );
+}
+
+function GrammarCard({data}){
+  const [toast,setToast]=useState('');
+  const addSRS=()=>{setToast('Added to SRS queue ✓');setTimeout(()=>setToast(''),3000)};
+  return(
+    <div className="grammar-card">
+      <div className="grammar-card-header">Grammar Point</div>
+      <div className="grammar-title">{data.title}</div>
+      <div style={{fontSize:'.82rem',color:'var(--muted)'}}>{data.meaning}</div>
+      <div className="grammar-ex">{data.example}</div>
+      <div style={{fontSize:'.78rem',color:'var(--muted)'}}>{data.en}</div>
+      <div className="grammar-actions">
+        <button className="lg btn btn-sm" onClick={addSRS} style={{fontSize:'.72rem'}}>+ Add to SRS</button>
+        <button className="lg btn btn-sm" style={{fontSize:'.72rem'}}>📓 Add to Notes</button>
+      </div>
+      {toast&&<div style={{fontSize:'.72rem',color:'var(--jade)',marginTop:'.4rem'}}>✓ {toast}</div>}
+    </div>
+  );
+}
+
+function Message({msg,isStreaming}){
+  return(
+    <div className={`msg ${msg.role}`}>
+      {msg.role==='ai'&&<div className="sensei-avatar">先</div>}
+      <div className={`bubble ${msg.role}`}>
+        <div style={{whiteSpace:'pre-wrap',fontFamily:msg.role==='ai'?'var(--font-b)':'var(--font-b)'}}>{msg.content}
+          {isStreaming&&<span className="cursor-blink"/>}
+        </div>
+        {msg.grammar&&<GrammarCard data={msg.grammar}/>}
+      </div>
+    </div>
+  );
+}
+
+function App(){
+  const [msgs,setMsgs]=useState(INITIAL_MSGS);
+  const [input,setInput]=useState('');
+  const [streaming,setStreaming]=useState(false);
+  const [activeConv,setActiveConv]=useState(1);
+  const [toasts,setToasts]=useState([]);
+  const messagesEndRef=useRef(null);
+  const textareaRef=useRef(null);
+
+  useEffect(()=>{
+    messagesEndRef.current?.scrollIntoView({behavior:'smooth'});
+  },[msgs,streaming]);
+
+  const addToast=msg=>{
+    const id=Date.now();
+    setToasts(t=>[...t,{id,msg}]);
+    setTimeout(()=>setToasts(t=>t.filter(x=>x.id!==id)),4000);
+  };
+
+  const sendMessage=useCallback(async()=>{
+    if(!input.trim()||streaming)return;
+    const userMsg=input.trim();
+    setInput('');
+    setMsgs(m=>[...m,{role:'user',content:userMsg,grammar:null}]);
+    setStreaming(true);
+
+    // Simulate streaming response
+    const response=getAIResponse(userMsg);
+    const fullText=response.content;
+    let displayed='';
+    
+    setMsgs(m=>[...m,{role:'ai',content:'',grammar:null,_streaming:true}]);
+    
+    for(let i=0;i<fullText.length;i++){
+      await new Promise(r=>setTimeout(r,12));
+      displayed+=fullText[i];
+      setMsgs(m=>{
+        const copy=[...m];
+        copy[copy.length-1]={...copy[copy.length-1],content:displayed};
+        return copy;
+      });
+    }
+    setMsgs(m=>{
+      const copy=[...m];
+      copy[copy.length-1]={...copy[copy.length-1],grammar:response.grammar,_streaming:false};
+      return copy;
+    });
+    setStreaming(false);
+  },[input,streaming]);
+
+  const handleKey=e=>{
+    if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}
+  };
+
+  return(
+    <div className="tutor-page">
+      <Navbar/>
+      <div className="tutor-body">
+        {/* Sidebar */}
+        <aside className="sidebar">
+          <div style={{fontSize:'.72rem',color:'var(--muted)',textTransform:'uppercase',letterSpacing:'.1em',marginBottom:'.25rem'}}>Conversations</div>
+          {CONVS.map(c=>(
+            <div key={c.id} className={`conv-item${c.id===activeConv?' active':''}`} onClick={()=>setActiveConv(c.id)}>
+              <div style={{fontSize:'.82rem',color:'var(--fg)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{c.title}</div>
+              <div style={{fontSize:'.7rem',color:'var(--muted)',marginTop:'.2rem'}}>{c.time}</div>
+            </div>
+          ))}
+          <button className="lg btn btn-sm" style={{marginTop:'auto',textAlign:'center'}} onClick={()=>{setMsgs(INITIAL_MSGS);setActiveConv(0);}}>＋ New Chat</button>
+        </aside>
+
+        {/* Main chat */}
+        <div className="chat-main">
+          <div className="chat-header">
+            <div className="sensei-avatar">先</div>
+            <div>
+              <div style={{fontWeight:500}}>Sensei AI</div>
+              <div style={{fontSize:'.75rem',color:'var(--muted)'}}><span className="online-dot"/>Online — ready to practice</div>
+            </div>
+            <div style={{marginLeft:'auto',display:'flex',gap:'.5rem'}}>
+              <button className="lg btn btn-sm" onClick={()=>setMsgs(INITIAL_MSGS)}>Clear</button>
+              <button className="lg btn btn-sm" onClick={()=>{setMsgs(INITIAL_MSGS);setActiveConv(0);}}>＋ New</button>
+            </div>
+          </div>
+
+          <div className="messages">
+            {msgs.map((msg,i)=>(
+              <Message key={i} msg={msg} isStreaming={streaming&&i===msgs.length-1&&msg.role==='ai'}/>
+            ))}
+            <div ref={messagesEndRef}/>
+          </div>
+
+          <div className="input-area">
+            {/* Quick prompts */}
+            <div style={{display:'flex',gap:'.5rem',marginBottom:'.75rem',flexWrap:'wrap'}}>
+              {['Explain て-form','Practice N4 vocab','は vs が particles','How to count things'].map(p=>(
+                <button key={p} className="pill" style={{fontSize:'.72rem',padding:'.25rem .7rem'}} onClick={()=>{setInput(p);textareaRef.current?.focus();}}>{p}</button>
+              ))}
+            </div>
+            <div className="input-box">
+              <button className="icon-btn" title="Voice input">🎤</button>
+              <button className="icon-btn" title="Upload image">📎</button>
+              <textarea
+                ref={textareaRef}
+                rows={1}
+                value={input}
+                onChange={e=>setInput(e.target.value)}
+                onKeyDown={handleKey}
+                placeholder="Ask in Japanese or English..."
+                style={{fontFamily:input.match(/[\u3000-\u9fff]/)?' var(--font-jp)':'var(--font-b)'}}
+              />
+              <button className={`send-btn ${input.trim()&&!streaming?'active':'inactive'}`} onClick={sendMessage}>Send →</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile nav */}
+      <nav className="mobile-nav lg">
+        <a href="Dashboard.html"><span>🏠</span><span>Home</span></a>
+        <a href="Learning Path.html"><span>📚</span><span>Path</span></a>
+        <a href="Flashcards.html"><span>🃏</span><span>Cards</span></a>
+        <a href="AI Tutor.html" className="active"><span>🤖</span><span>Tutor</span></a>
+        <a href="Dictionary.html"><span style={{fontFamily:'var(--font-jp)'}}>辞</span><span>Dict</span></a>
+      </nav>
+
+      {/* Toasts */}
+      <div className="toast-area">
+        {toasts.map(t=><div key={t.id} className="toast-item">{t.msg}</div>)}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

@@ -19,6 +19,8 @@ venv/
 # Build artifacts
 build/
 *.tsbuildinfo
+*.d.ts
+*.config.js
 
 # OS
 .DS_Store

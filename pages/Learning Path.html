@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>NihongoMaster — Learning Path</title>
+<link rel="stylesheet" href="shared.css"/>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+.lp-page{min-height:100vh;display:flex;flex-direction:column;padding-bottom:80px}
+.lp-body{display:flex;flex:1}
+.lp-sidebar{width:200px;flex-shrink:0;border-right:1px solid var(--border);padding:1.25rem;display:flex;flex-direction:column;gap:.35rem}
+@media(max-width:767px){.lp-sidebar{display:none}}
+.lp-main{flex:1;padding:2rem;overflow-y:auto}
+.level-tab{border-radius:.75rem;padding:.6rem 1rem;cursor:pointer;transition:all .2s;border:1px solid transparent;font-size:.875rem;color:var(--muted);display:flex;align-items:center;justify-content:space-between}
+.level-tab:hover{color:var(--fg);background:rgba(255,255,255,.05)}
+.level-tab.active{color:var(--ember);background:rgba(249,115,22,.1);border-color:rgba(249,115,22,.3)}
+.progress-summary{border-radius:1.25rem;padding:1.5rem;margin-bottom:1.75rem}
+.skill-tree{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.5rem 2rem;position:relative}
+.col-header{text-align:center;font-size:.7rem;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin-bottom:1.25rem;padding-bottom:.75rem;border-bottom:1px solid var(--border)}
+.node{display:flex;flex-direction:column;align-items:center;margin-bottom:1.5rem;position:relative;cursor:pointer}
+.node-circle{width:56px;height:56px;border-radius:9999px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;position:relative;transition:transform .2s}
+.node-circle:hover{transform:scale(1.08)}
+.node.completed .node-circle{background:var(--ember);box-shadow:0 0 16px rgba(249,115,22,.4)}
+.node.active .node-circle{background:rgba(249,115,22,.15);border:2px solid var(--ember);animation:pulse-glow 2s ease-in-out infinite}
+.node.locked .node-circle{background:rgba(255,255,255,.04);border:2px dashed var(--border);opacity:.45}
+.node-label{font-size:.72rem;color:var(--muted);margin-top:.5rem;text-align:center;max-width:80px;line-height:1.3}
+.node-connector{width:2px;height:32px;background:var(--border);margin:0 auto}
+.node.completed+.node-connector,.node.completed~.node .node-connector{background:var(--ember)}
+.lesson-panel{position:fixed;right:0;top:64px;bottom:0;width:320px;border-left:1px solid var(--border);padding:1.5rem;overflow-y:auto;z-index:40;animation:slide-right .25s ease-out both}
+.panel-bg{background:var(--surface);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+.close-btn{position:absolute;top:1rem;right:1rem;background:none;border:none;color:var(--muted);font-size:1.25rem;cursor:pointer;padding:.25rem .5rem;border-radius:.5rem}
+.close-btn:hover{color:var(--fg);background:rgba(255,255,255,.06)}
+.subtopic{display:flex;align-items:center;gap:.6rem;padding:.5rem .6rem;border-radius:.6rem;font-size:.8125rem;margin-bottom:.3rem}
+.subtopic:hover{background:rgba(255,255,255,.04)}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState} = React;
+
+const LEVELS=['N5','N4','N3','N2','N1'];
+const LEVEL_DATA={
+  N5:{progress:100,grammar:[12,12],kanji:[100,100],vocab:[500,500]},
+  N4:{progress:62,grammar:[8,12],kanji:[45,100],vocab:[320,500]},
+  N3:{progress:0,grammar:[0,22],kanji:[0,200],vocab:[0,750]},
+  N2:{progress:0,grammar:[0,30],kanji:[0,300],vocab:[0,1200]},
+  N1:{progress:0,grammar:[0,40],kanji:[0,400],vocab:[0,2000]},
+};
+
+const TREE_DATA={
+  N4:{
+    grammar:[
+      {title:'て-form Basics',status:'completed',progress:[5,5],time:'~20 min',topics:['Conjugation rules','Connecting actions','〜てください']},
+      {title:'〜ている',status:'completed',progress:[5,5],time:'~15 min',topics:['Ongoing actions','Resultant state','Habitual actions']},
+      {title:'〜たことがある',status:'active',progress:[2,5],time:'~20 min',topics:['Experience expression','Negative form','Questions']},
+      {title:'〜てもいい',status:'locked',progress:[0,5],time:'~15 min',topics:['Asking permission','Granting permission','Refusing politely']},
+      {title:'Conditional〜たら',status:'locked',progress:[0,5],time:'~25 min',topics:['Hypothetical conditions','Past conditional','Contrast usage']},
+    ],
+    kanji:[
+      {title:'People & Society',status:'completed',progress:[20,20],time:'~40 min',topics:['人 民 者 員 生','社 会 国 家 世']},
+      {title:'Nature & Time',status:'completed',progress:[20,20],time:'~35 min',topics:['日 月 年 週 時','春 夏 秋 冬 朝']},
+      {title:'Actions & Movement',status:'active',progress:[8,20],time:'~45 min',topics:['行 来 帰 走 歩','飛 乗 降 動 止']},
+      {title:'Mind & Emotion',status:'locked',progress:[0,20],time:'~40 min',topics:['思 考 感 知 覚']},
+      {title:'Advanced N4 Set',status:'locked',progress:[0,20],time:'~50 min',topics:['Complex compounds']},
+    ],
+    vocab:[
+      {title:'Daily Life',status:'completed',progress:[80,80],time:'~60 min',topics:['食事 買い物 交通','家族 友達 職場']},
+      {title:'Work & Study',status:'completed',progress:[80,80],time:'~55 min',topics:['勉強 仕事 会議','資料 報告 予定']},
+      {title:'Health & Body',status:'active',progress:[35,80],time:'~60 min',topics:['体 病気 薬 病院','症状 治療 健康']},
+      {title:'Travel & Places',status:'locked',progress:[0,80],time:'~65 min',topics:['旅行 交通 地図 観光']},
+      {title:'Emotions & Abstract',status:'locked',progress:[0,80],time:'~70 min',topics:['感情 性格 関係 社会']},
+    ],
+  }
+};
+
+function Navbar(){
+  return(
+    <nav className="navbar lg">
+      <div className="navbar-inner">
+        <a href="../Velorah Hero.html" className="logo">Nihongo<em style={{fontStyle:'normal',color:'var(--muted)'}}>Master</em><sup>®</sup></a>
+        <ul className="nav-links">
+          <li><a href="Dashboard.html">Dashboard</a></li>
+          <li><a href="Learning Path.html" className="active">Path</a></li>
+          <li><a href="AI Tutor.html">AI Tutor</a></li>
+          <li><a href="Flashcards.html">Flashcards</a></li>
+          <li><a href="Dictionary.html">Dictionary</a></li>
+        </ul>
+        <div className="nav-right">
+          <div className="streak keep-mobile">🔥 12</div>
+          <button className="lg nav-cta btn">Quick Practice</button>
+          <div className="avatar">你</div>
+        </div>
+      </div>
+    </nav>
+  );
+}
+
+function NodeComp({node,onClick}){
+  const icon=node.status==='completed'?'✓':node.status==='active'?'▶':'🔒';
+  return(
+    <div className={`node ${node.status}`} onClick={()=>node.status!=='locked'&&onClick(node)}>
+      <div className="node-circle">{icon}</div>
+      <div className="node-label">{node.title}</div>
+      {node.status==='active'&&(
+        <div style={{fontSize:'.65rem',color:'var(--ember)',marginTop:'.2rem'}}>{node.progress[0]}/{node.progress[1]}</div>
+      )}
+    </div>
+  );
+}
+
+function LessonPanel({node,onClose}){
+  if(!node)return null;
+  return(
+    <div className="lesson-panel panel-bg" style={{background:'var(--surface)'}}>
+      <button className="close-btn" onClick={onClose}>✕</button>
+      <div style={{display:'flex',alignItems:'center',gap:'.75rem',marginBottom:'1rem'}}>
+        <span className="jlpt n4">N4</span>
+        <span style={{fontSize:'.75rem',color:'var(--muted)'}}>{node.time}</span>
+      </div>
+      <div style={{fontFamily:'var(--font-d)',fontSize:'1.5rem',lineHeight:1.2,marginBottom:'.75rem'}}>{node.title}</div>
+      <div style={{fontSize:'.8125rem',color:'var(--muted)',marginBottom:'1.25rem',lineHeight:1.6}}>
+        Master this topic to advance your N4 grammar knowledge and unlock the next lessons in your path.
+      </div>
+      <div style={{fontFamily:'var(--font-d)',fontSize:'.9rem',marginBottom:'.6rem'}}>Topics covered</div>
+      {node.topics.map((t,i)=>(
+        <div key={i} className="subtopic">
+          <span style={{color:'var(--ember)',fontSize:'.7rem'}}>◆</span>
+          <span style={{fontFamily:t.match(/[\u3000-\u9fff]/)?'var(--font-jp)':'var(--font-b)'}}>{t}</span>
+        </div>
+      ))}
+      {node.status==='active'&&(
+        <div style={{marginTop:'1rem'}}>
+          <div style={{fontSize:'.72rem',color:'var(--muted)',marginBottom:'.4rem'}}>Progress: {node.progress[0]}/{node.progress[1]}</div>
+          <div className="xpbar-track"><div className="xpbar-fill" style={{width:`${(node.progress[0]/node.progress[1])*100}%`}}/></div>
+        </div>
+      )}
+      <a href="Flashcards.html" className="lg btn btn-ember" style={{display:'block',textAlign:'center',width:'100%',marginTop:'1.5rem'}}>
+        {node.status==='active'?'Resume Lesson →':'Begin Lesson →'}
+      </a>
+    </div>
+  );
+}
+
+function App(){
+  const [level,setLevel]=useState('N4');
+  const [selected,setSelected]=useState(null);
+  const ld=LEVEL_DATA[level];
+  const tree=TREE_DATA[level]||TREE_DATA.N4;
+
+  return(
+    <div className="lp-page">
+      <Navbar/>
+      <div className="lp-body">
+        {/* Sidebar */}
+        <aside className="lp-sidebar">
+          <div style={{fontSize:'.7rem',color:'var(--muted)',textTransform:'uppercase',letterSpacing:'.1em',marginBottom:'.5rem'}}>JLPT Level</div>
+          {LEVELS.map(l=>{
+            const d=LEVEL_DATA[l];
+            return(
+              <div key={l} className={`level-tab${level===l?' active':''}`} onClick={()=>{setLevel(l);setSelected(null);}}>
+                <span>{l}</span>
+                {d.progress>0&&<span style={{fontSize:'.65rem',opacity:.7}}>{d.progress}%</span>}
+              </div>
+            );
+          })}
+        </aside>
+
+        <main className="lp-main">
+          {/* Progress summary */}
+          <div className="lg progress-summary fr" style={{borderRadius:'1.25rem'}}>
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'.75rem',flexWrap:'wrap',gap:'1rem'}}>
+              <div>
+                <span className="jlpt n4" style={{marginRight:'.5rem'}}>{level}</span>
+                <span style={{fontFamily:'var(--font-d)',fontSize:'1.25rem'}}>Progress</span>
+              </div>
+              <span style={{fontFamily:'var(--font-d)',fontSize:'1.5rem',color:ld.progress===100?'var(--jade)':'var(--ember)'}}>{ld.progress}%</span>
+            </div>
+            <div className="xpbar-track" style={{height:'6px',marginBottom:'.75rem'}}>
+              <div className="xpbar-fill" style={{width:`${ld.progress}%`,background:ld.progress===100?'var(--jade)':'var(--ember)'}}/>
+            </div>
+            <div style={{display:'flex',gap:'2rem',fontSize:'.8125rem',color:'var(--muted)',flexWrap:'wrap'}}>
+              <span>Grammar <strong style={{color:'var(--fg)'}}>{ld.grammar[0]}/{ld.grammar[1]}</strong></span>
+              <span>Kanji <strong style={{color:'var(--fg)'}}>{ld.kanji[0]}/{ld.kanji[1]}</strong></span>
+              <span>Vocabulary <strong style={{color:'var(--fg)'}}>{ld.vocab[0]}/{ld.vocab[1]}</strong></span>
+            </div>
+          </div>
+
+          {/* Skill tree */}
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:'0 2rem'}}>
+            {['Grammar','Kanji','Vocabulary'].map(col=>(
+              <div key={col}>
+                <div className="col-header">{col}</div>
+                {tree[col.toLowerCase()].map((node,i)=>(
+                  <div key={i}>
+                    <NodeComp node={node} onClick={setSelected}/>
+                    {i<tree[col.toLowerCase()].length-1&&<div className="node-connector"/>}
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        </main>
+      </div>
+
+      <LessonPanel node={selected} onClose={()=>setSelected(null)}/>
+
+      <nav className="mobile-nav lg">
+        <a href="Dashboard.html"><span>🏠</span><span>Home</span></a>
+        <a href="Learning Path.html" className="active"><span>📚</span><span>Path</span></a>
+        <a href="Flashcards.html"><span>🃏</span><span>Cards</span></a>
+        <a href="AI Tutor.html"><span>🤖</span><span>Tutor</span></a>
+        <a href="Dictionary.html"><span style={{fontFamily:'var(--font-jp)'}}>辞</span><span>Dict</span></a>
+      </nav>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
