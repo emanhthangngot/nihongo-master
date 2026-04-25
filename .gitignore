@@ -20,6 +20,7 @@ venv/
 build/
 *.tsbuildinfo
 *.d.ts
+*.config.js
 
 # OS
 .DS_Store
