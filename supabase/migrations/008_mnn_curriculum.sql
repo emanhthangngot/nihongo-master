@@ -38,3 +38,19 @@ create table if not exists user_progress (
   updated_at   timestamptz default now(),
   unique(user_id, lesson_id)
 );
+
+-- Seed some sample lessons for Book I (Minna no Nihongo I)
+DO $$ 
+DECLARE
+  book_id_n5 uuid;
+BEGIN
+  SELECT id INTO book_id_n5 FROM curriculum_books WHERE title_jp = 'みんなの日本語 I' LIMIT 1;
+  
+  IF book_id_n5 IS NOT NULL THEN
+    INSERT INTO curriculum_lessons (book_id, lesson_number, title_jp, title_en, grammar_points, key_vocab, kanji, jlpt_level)
+    VALUES 
+      (book_id_n5, 1, 'はじめまして', 'Nice to meet you', '{"N1は N2です", "N1は N2じゃありません", "N1は N2ですか"}', '{"わたし", "あなた", "～さん", "せんせい", "がくせい"}', '{"私", "先", "生", "学"}', 'N5'),
+      (book_id_n5, 2, 'ほんのきもちです', 'This is a small token', '{"これ/それ/あれ", "この/その/あの", "そうです/そうじゃありません"}', '{"これ", "それ", "あれ", "ほん", "じしょ"}', '{"本", "何", "気"}', 'N5')
+    ON CONFLICT (book_id, lesson_number) DO NOTHING;
+  END IF;
+END $$;
