@@ -30,8 +30,21 @@ def detect_grammar(text: str) -> dict | None:
     return None
 
 async def rewrite_query(query: str, history: list[str]) -> str:
-    # Placeholder for LLM query rewriting
-    return query
+    if not history:
+        return query
+        
+    system_prompt = "You are an AI query rewriter. Given a conversation history and a new user query, rewrite the new query to be a standalone, fully contextualized query. Do NOT answer the query. Only output the rewritten query text, nothing else."
+    history_text = "\n".join(history[-4:]) # Last 4 turns for context
+    prompt = f"History:\n{history_text}\n\nUser Query: {query}\n\nRewritten standalone query:"
+    
+    collected = ""
+    try:
+        async for token in model_router.astream(system_prompt, prompt):
+            collected += token
+        return collected.strip() or query
+    except Exception as e:
+        print(f"Rewrite error: {e}")
+        return query
 
 async def _generate_stream(query: str, conversation_id: str | None, user_id: str | None, jlpt_level: str):
     start_time = time.time()
