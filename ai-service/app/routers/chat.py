@@ -57,6 +57,11 @@ async def _generate_stream(query: str, conversation_id: str | None, user_id: str
     query_emb = embed_query(rewritten_query)
     chunks, records = await retrieve_documents_hybrid(rewritten_query, query_emb, top_k=3)
     
+    from app.rag.retriever import retrieve_notebook_items
+    if user_id:
+        personal_chunks = await retrieve_notebook_items(user_id, query_emb, top_k=2)
+        chunks.extend(personal_chunks)
+    
     # 3. Prompt Assembly
     system_prompt = build_sensei_prompt(chunks, history, jlpt_level)
 

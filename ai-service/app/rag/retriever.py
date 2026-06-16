@@ -73,3 +73,24 @@ async def retrieve_documents_hybrid(query_text: str, query_embedding: list[float
     except Exception as e:
         print(f"Hybrid retrieval error: {e}")
         return [], []
+
+async def retrieve_notebook_items(user_id: str, query_embedding: list[float], top_k: int = 3) -> list[str]:
+    """Semantic search over user's personal notebook_items."""
+    if not _sb or not user_id:
+        return []
+    try:
+        res = _sb.rpc("match_notebook_items", {
+            "p_user_id": user_id,
+            "query_embedding": query_embedding,
+            "match_count": top_k,
+        }).execute()
+        chunks = []
+        for row in res.data or []:
+            pattern = row.get("pattern", "")
+            meaning = row.get("meaning", "")
+            example = row.get("example_jp", "")
+            chunks.append(f"[Personal Note] {pattern}: {meaning} (e.g. {example})")
+        return chunks
+    except Exception as e:
+        print(f"Notebook retrieval error: {e}")
+        return []
