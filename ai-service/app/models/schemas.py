@@ -8,6 +8,7 @@ class ChatMessage(BaseModel):
 class ChatRequest(BaseModel):
     messages:       list[ChatMessage]
     conversation_id: Optional[str] = None
+    user_id:        Optional[str] = None
     jlpt_level:     Optional[str] = "N4"
     language:       str = "en"   # response language preference
 

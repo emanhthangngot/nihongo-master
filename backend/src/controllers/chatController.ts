@@ -5,10 +5,19 @@ import { streakService } from '../services/streakService'
 
 const AI_SERVICE_URL = process.env.AI_SERVICE_URL ?? 'http://localhost:8000'
 
+import { z } from 'zod'
+
+const AskQuestionSchema = z.object({
+  message: z.string().min(1).max(2000),
+  conversation_id: z.string().uuid().optional(),
+  jlpt_level: z.enum(["N5", "N4", "N3", "N2", "N1"]).optional()
+})
+
 export async function streamChat(req: AuthRequest, res: Response, next: NextFunction) {
   try {
-    const { message, conversation_id, jlpt_level } = req.body
-    if (!message) return res.status(400).json({ error: 'message required' })
+    const parseRes = AskQuestionSchema.safeParse(req.body)
+    if (!parseRes.success) return res.status(400).json({ error: parseRes.error.errors })
+    const { message, conversation_id, jlpt_level } = parseRes.data
 
     res.setHeader('Content-Type', 'text/event-stream')
     res.setHeader('Cache-Control', 'no-cache')
@@ -21,6 +30,7 @@ export async function streamChat(req: AuthRequest, res: Response, next: NextFunc
       body: JSON.stringify({
         messages: [{ role: 'user', content: message }],
         conversation_id: conversation_id ?? null,
+        user_id: req.userId ?? null,
         jlpt_level: jlpt_level ?? 'N4',
       }),
     })

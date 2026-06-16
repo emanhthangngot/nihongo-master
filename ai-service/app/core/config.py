@@ -7,7 +7,8 @@ class Settings(BaseSettings):
     ollama_model:      str  = "gemma2:9b"
     groq_api_key:      str  = ""
     groq_model:        str  = "llama3-70b-8192"
-    embed_model:       str  = "intfloat/multilingual-e5-large"
+    gemini_api_key:    str  = ""
+    embed_model:       str  = "models/embedding-001"
     use_groq_fallback: bool = True
 
     # Database / Supabase

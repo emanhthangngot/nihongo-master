@@ -1,0 +1,5 @@
+{"id": "n4_wa_ga_001", "query": "Phân biệt は và が trong tiếng Nhật như thế nào?", "level": "N4", "expected_doc_ids": [], "must_cover": ["topic marker", "subject marker", "contrast", "new information"], "language": "vi", "difficulty": "N4"}
+{"id": "n4_te_iru_001", "query": "Mẫu câu ている có nghĩa là gì?", "level": "N4", "expected_doc_ids": [], "must_cover": ["đang", "trạng thái", "kết quả"], "language": "vi", "difficulty": "N4"}
+{"id": "n3_ni_tsuite_001", "query": "Dùng について như thế nào?", "level": "N3", "expected_doc_ids": [], "must_cover": ["về", "chủ đề", "liên quan đến"], "language": "vi", "difficulty": "N3"}
+{"id": "n2_ni_shite_wa_001", "query": "Ý nghĩa của にしては là gì?", "level": "N2", "expected_doc_ids": [], "must_cover": ["cho dù", "so với", "không ngờ"], "language": "vi", "difficulty": "N2"}
+{"id": "n5_de_ni_001", "query": "Khác nhau giữa で và に khi chỉ địa điểm?", "level": "N5", "expected_doc_ids": [], "must_cover": ["tồn tại", "hành động", "xảy ra"], "language": "vi", "difficulty": "N5"}

@@ -1,6 +1,6 @@
 """
-Singleton sentence-transformer embedding model.
-Lazy-loaded on first use to avoid slowing startup.
+Singleton embedding model.
+Uses Google Gemini Embedding API.
 """
 from app.core.config import settings
 
@@ -10,19 +10,20 @@ _model = None
 def get_embeddings_model():
     global _model
     if _model is None:
-        from sentence_transformers import SentenceTransformer
-        _model = SentenceTransformer(settings.embed_model)
+        from llama_index.embeddings.google_genai import GoogleGenAIEmbedding
+        _model = GoogleGenAIEmbedding(model_name=settings.embed_model, api_key=settings.gemini_api_key)
     return _model
 
 
 def embed_texts(texts: list[str]) -> list[list[float]]:
+    if not texts:
+        return []
     model = get_embeddings_model()
-    prefixed = [f"passage: {t}" for t in texts]
-    vecs = model.encode(prefixed, batch_size=32, normalize_embeddings=True)
-    return vecs.tolist()
+    vecs = model.get_text_embedding_batch(texts)
+    return vecs
 
 
 def embed_query(query: str) -> list[float]:
     model = get_embeddings_model()
-    vec = model.encode(f"query: {query}", normalize_embeddings=True)
-    return vec.tolist()
+    vec = model.get_query_embedding(query)
+    return vec

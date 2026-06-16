@@ -49,3 +49,27 @@ async def retrieve_chat_memories(user_id: str, query_embedding: list[float], top
         return [row.get("content", "") for row in res.data or []]
     except Exception:
         return []
+
+async def retrieve_documents_hybrid(query_text: str, query_embedding: list[float], top_k: int = 3) -> tuple[list[str], list[dict]]:
+    """Hybrid search over document_embeddings using pgvector and tsvector (RRF)."""
+    if not _sb:
+        return [], []
+    try:
+        res = _sb.rpc("hybrid_search_documents", {
+            "query_text": query_text,
+            "query_embedding": query_embedding,
+            "match_count": top_k,
+        }).execute()
+        
+        records = res.data or []
+        chunks = []
+        for row in records:
+            content = row.get("content", "")
+            meta = row.get("metadata", {})
+            level = meta.get("level", "Unknown")
+            chunks.append(f"[Level: {level}] {content}")
+            
+        return chunks, records
+    except Exception as e:
+        print(f"Hybrid retrieval error: {e}")
+        return [], []

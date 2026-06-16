@@ -18,10 +18,31 @@ export async function getDueQueue(req: AuthRequest, res: Response, next: NextFun
   } catch (err) { next(err) }
 }
 
+import { z } from 'zod'
+
+const ReviewCardSchema = z.object({
+  rating: z.number().int().min(1).max(4),
+  clientMutationId: z.string().uuid().optional()
+})
+
 export async function gradeCard(req: AuthRequest, res: Response, next: NextFunction) {
   try {
     const { cardId } = req.params
-    const { rating } = req.body
+    const parseRes = ReviewCardSchema.safeParse(req.body)
+    if (!parseRes.success) return res.status(400).json({ error: parseRes.error.errors })
+    const { rating, clientMutationId } = parseRes.data
+
+    if (clientMutationId) {
+      const { data: existing } = await supabase
+        .from('client_mutations')
+        .select('id')
+        .eq('id', clientMutationId)
+        .single()
+      if (existing) {
+        return res.json({ success: true, idempotent: true })
+      }
+    }
+
     const { data: card } = await supabase
       .from('srs_cards').select('*').eq('id', cardId).eq('user_id', req.userId).single()
     if (!card) return res.status(404).json({ error: 'Card not found' })
@@ -29,6 +50,11 @@ export async function gradeCard(req: AuthRequest, res: Response, next: NextFunct
     const updated = fsrsGrade(card, rating)
     const { data } = await supabase
       .from('srs_cards').update(updated).eq('id', cardId).select().single()
+
+    if (clientMutationId) {
+       await supabase.from('client_mutations').insert({ id: clientMutationId, user_id: req.userId, mutation_type: 'grade_card' }).catch(() => {})
+    }
+
     res.json(data)
   } catch (err) { next(err) }
 }
