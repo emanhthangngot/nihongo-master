@@ -17,6 +17,11 @@ export async function getLearningPath(req: AuthRequest, res: Response, next: Nex
     const { data: nodes, error } = await nodesQ
     if (error) throw error
 
+    const { data: edges, error: edgeErr } = await supabase
+      .from('learning_graph_edges')
+      .select('*')
+    if (edgeErr) throw edgeErr
+
     const { data: progress } = await supabase
       .from('user_node_progress')
       .select('node_id, status, progress_current, progress_total, completed_at')
@@ -29,7 +34,7 @@ export async function getLearningPath(req: AuthRequest, res: Response, next: Nex
       userProgress: progressMap[node.id] ?? { status: 'locked', progress_current: 0, progress_total: 0 },
     }))
 
-    res.json(enriched)
+    res.json({ nodes: enriched, edges: edges ?? [] })
   } catch (err) { next(err) }
 }
 
@@ -121,5 +126,29 @@ export async function seedInitialPath(req: AuthRequest, res: Response, next: Nex
     const { data: user } = await supabase.from('users').select('jlpt_target').eq('id', req.userId).single()
     await userService.seedInitialPath(req.userId!, user?.jlpt_target ?? 'N5')
     res.json({ success: true })
+  } catch (err) { next(err) }
+}
+
+export async function getRecommendedNodes(req: AuthRequest, res: Response, next: NextFunction) {
+  try {
+    const { data: nodes, error } = await supabase.from('learning_graph_nodes').select('*')
+    if (error) throw error
+
+    const { data: edges } = await supabase.from('learning_graph_edges').select('*')
+    const { data: progress } = await supabase
+      .from('user_node_progress')
+      .select('node_id, status')
+      .eq('user_id', req.userId)
+
+    const completedNodeIds = new Set((progress ?? []).filter(p => p.status === 'completed').map(p => p.node_id))
+    
+    const pendingNodes = (nodes ?? []).filter(n => !completedNodeIds.has(n.id))
+
+    const recommendations = pendingNodes.filter(node => {
+      const prerequisites = (edges ?? []).filter(e => e.to_node === node.id).map(e => e.from_node)
+      return prerequisites.every(prereq => completedNodeIds.has(prereq))
+    })
+
+    res.json(recommendations.slice(0, 3))
   } catch (err) { next(err) }
 }
