@@ -102,13 +102,16 @@ function Step2({ onNext }: { onNext: (level: string) => void }) {
   )
 }
 
-function Step3({ goal, level }: { goal: string; level: string }) {
+function Step3({ goal: _goal, level: _level }: { goal: string; level: string }) {
   const navigate = useNavigate()
   const [qIdx, setQIdx] = useState(0)
   const [answers, setAnswers] = useState<Record<number, number>>({})
-  const [done, setDone] = useState(false)
+  
+  // If the target level is N5, they are a beginner, so skip the placement test
+  const [done, setDone] = useState(_level === 'N5')
+  
   const q = QUESTIONS[qIdx]
-  const progress = (qIdx / QUESTIONS.length) * 100
+  const progress = done ? 100 : (qIdx / QUESTIONS.length) * 100
 
   const answer = (oi: number) => {
     if (answers[qIdx] !== undefined) return
@@ -120,16 +123,31 @@ function Step3({ goal, level }: { goal: string; level: string }) {
   }
 
   const correct = Object.entries(answers).filter(([qi, oi]) => QUESTIONS[+qi].correct === oi).length
-  const pct = Math.round((correct / QUESTIONS.length) * 100)
-  const result = pct >= 75 ? 'N4' : pct >= 50 ? 'N5' : 'N5'
+  const pct = Object.keys(answers).length > 0 ? Math.round((correct / QUESTIONS.length) * 100) : 0
+  const result = _level === 'N5' ? 'N5' : pct >= 75 ? 'N4' : 'N5'
+
+  const pathItems = [
+    `Personalized ${result} skill tree`,
+    'Grammar, Kanji & Vocabulary tracks',
+    'SRS flashcards tuned to your level',
+    'AI Tutor ready for practice',
+  ]
 
   if (done) return (
     <div className="text-center animate-fade-rise max-w-md">
-      <div className="jp text-8xl text-muted-foreground/30">大丈夫</div>
-      <div className="font-display text-4xl mt-4">You're at → {result} level</div>
-      <p className="text-muted-foreground mt-3">Based on {QUESTIONS.length} placement questions</p>
+      <div className="text-5xl mb-4">🌸</div>
+      <div className="font-display text-4xl leading-tight">Your path is ready.</div>
+      <p className="text-muted-foreground mt-3">JLPT {result} Path</p>
+      <div className="text-left mt-8 max-w-xs mx-auto space-y-0">
+        {pathItems.map((item, i) => (
+          <div key={i} className="flex items-center gap-3 py-2.5 border-b border-white/5 last:border-0">
+            <span className="text-accent-jade text-sm">✓</span>
+            <span className="text-sm text-muted-foreground">{item}</span>
+          </div>
+        ))}
+      </div>
       <LiquidButton ember className="mt-8 mx-auto" onClick={() => navigate('/learning-path')}>
-        Build My Path →
+        Begin Learning →
       </LiquidButton>
     </div>
   )

@@ -2,8 +2,6 @@ import { useParams, Link } from 'react-router-dom'
 import Navbar from '@/components/layout/Navbar'
 import MobileNav from '@/components/layout/MobileNav'
 import JapaneseText from '@/components/ui/JapaneseText'
-import AudioButton from '@/components/ui/AudioButton'
-import LiquidButton from '@/components/ui/LiquidButton'
 import { useToast } from '@/components/global/ToastProvider'
 import { useState } from 'react'
 
@@ -21,8 +19,8 @@ const STUB = {
 }
 
 export default function ReadingDetail() {
-  const { id } = useParams()
-  const { toast } = useToast()
+  const { id: _id } = useParams()
+  const { toast: _toast } = useToast()
   const story = STUB
   const [answers, setAnswers] = useState<Record<number,number>>({})
   const [quizDone, setQuizDone] = useState(false)

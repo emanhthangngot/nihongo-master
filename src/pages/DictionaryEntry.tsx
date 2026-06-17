@@ -21,7 +21,7 @@ const STUB = {
 }
 
 export default function DictionaryEntry() {
-  const { word } = useParams()
+  const { word: _word } = useParams()
   const { toast } = useToast()
   const entry = STUB   // TODO: useQuery to fetch by word param
 

@@ -130,7 +130,7 @@ export default function Flashcards() {
       style={{ background: 'radial-gradient(ellipse at 50% 0%,hsl(var(--accent-ember)/0.06) 0%,transparent 60%),hsl(var(--background))' }}>
       {/* Progress line */}
       <div className="h-[3px] bg-border relative">
-        <div className="absolute left-0 top-0 h-full bg-accent-ember rounded-r-full transition-all duration-400"
+        <div className="absolute left-0 top-0 h-full bg-accent-ember rounded-r-full transition-all duration-300"
           style={{ width: `${progress * 100}%` }} />
       </div>
 

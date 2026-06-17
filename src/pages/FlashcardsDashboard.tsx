@@ -1,4 +1,3 @@
-import { Link } from 'react-router-dom'
 import Navbar from '@/components/layout/Navbar'
 import MobileNav from '@/components/layout/MobileNav'
 import ProgressRing from '@/components/ui/ProgressRing'

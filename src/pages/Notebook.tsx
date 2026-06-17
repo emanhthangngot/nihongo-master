@@ -20,7 +20,7 @@ const INIT_ITEMS: Record<number, Item[]> = {
     {id:1,pattern:'〜てから',         meaning:'after doing ~',              example:'食べてから、歯を磨く。',         en:'After eating, brush teeth.',   tags:['N4','Grammar'],    srs:false},
     {id:2,pattern:'〜ている',          meaning:'ongoing / current state',   example:'雨が降っている。',             en:'It is raining.',               tags:['N4','Progressive'], srs:true},
     {id:3,pattern:'〜たことがある',    meaning:'have experience of doing ~', example:'日本に行ったことがある。',     en:'I have been to Japan.',        tags:['N4','Experience'],  srs:false},
-    {id:4,pattern:'〜てもいい',        meaning:'it's okay to ~ / may ~',   example:'ここに座ってもいいですか？',   en:'May I sit here?',              tags:['N4','Permission'],  srs:false},
+    {id:4,pattern:'〜てもいい',        meaning:"it's okay to ~ / may ~",   example:'ここに座ってもいいですか？',   en:'May I sit here?',              tags:['N4','Permission'],  srs:false},
     {id:5,pattern:'〜なければならない',meaning:'must ~; have to ~',          example:'宿題をしなければならない。',   en:'I must do my homework.',       tags:['N4','Obligation'],  srs:true},
     {id:6,pattern:'〜ようにする',      meaning:'try to ~; make effort to ~', example:'毎日運動するようにしている。', en:'I try to exercise every day.', tags:['N4','Effort'],      srs:false},
     {id:7,pattern:'〜はずだ',          meaning:'should be ~; supposed to ~', example:'彼は来るはずだ。',             en:'He is supposed to come.',      tags:['N4','Expectation'], srs:true},

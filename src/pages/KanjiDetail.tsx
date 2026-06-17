@@ -2,7 +2,6 @@ import { useParams, Link } from 'react-router-dom'
 import Navbar from '@/components/layout/Navbar'
 import MobileNav from '@/components/layout/MobileNav'
 import RadicalCard from '@/components/ui/RadicalCard'
-import AudioButton from '@/components/ui/AudioButton'
 import LiquidButton from '@/components/ui/LiquidButton'
 import { useToast } from '@/components/global/ToastProvider'
 
@@ -19,8 +18,8 @@ const STUB = {
 }
 
 export default function KanjiDetail() {
-  const { char } = useParams()
-  const { toast } = useToast()
+  const { char: _char } = useParams()
+  const { toast: _toast } = useToast()
   const k = STUB
 
   return (

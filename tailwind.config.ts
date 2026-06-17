@@ -5,15 +5,15 @@ export default {
   theme: {
     extend: {
       colors: {
-        background:          'hsl(var(--background))',
-        surface:             'hsl(var(--surface))',
-        'surface-raised':    'hsl(var(--surface-raised))',
-        foreground:          'hsl(var(--foreground))',
-        'muted-foreground':  'hsl(var(--muted-foreground))',
-        'accent-ember':      'hsl(var(--accent-ember))',
-        'accent-jade':       'hsl(var(--accent-jade))',
-        'accent-sakura':     'hsl(var(--accent-sakura))',
-        border:              'hsl(var(--border))',
+        background:          'hsl(var(--background) / <alpha-value>)',
+        surface:             'hsl(var(--surface) / <alpha-value>)',
+        'surface-raised':    'hsl(var(--surface-raised) / <alpha-value>)',
+        foreground:          'hsl(var(--foreground) / <alpha-value>)',
+        'muted-foreground':  'hsl(var(--muted-foreground) / <alpha-value>)',
+        'accent-ember':      'hsl(var(--accent-ember) / <alpha-value>)',
+        'accent-jade':       'hsl(var(--accent-jade) / <alpha-value>)',
+        'accent-sakura':     'hsl(var(--accent-sakura) / <alpha-value>)',
+        border:              'hsl(var(--border) / <alpha-value>)',
       },
       fontFamily: {
         display: ['Instrument Serif', 'serif'],

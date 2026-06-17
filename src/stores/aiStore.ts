@@ -38,7 +38,7 @@ interface AIState {
 
 function makeId() { return Math.random().toString(36).slice(2) }
 
-export const useAIStore = create<AIState>((set, get) => ({
+export const useAIStore = create<AIState>((set) => ({
   conversations: [
     { id: 'c1', title: 'て-form Practice',      messages: [], createdAt: Date.now() - 7200000, updatedAt: Date.now() - 7200000 },
     { id: 'c2', title: 'Particle が vs は',     messages: [], createdAt: Date.now() - 86400000, updatedAt: Date.now() - 86400000 },

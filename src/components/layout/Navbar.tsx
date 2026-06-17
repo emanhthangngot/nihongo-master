@@ -4,10 +4,11 @@ import { useSettingsStore } from '@/stores/settingsStore'
 import LiquidButton from '@/components/ui/LiquidButton'
 
 const NAV_LINKS = [
-  { label: 'Learning Path', to: '/learning-path' },
-  { label: 'AI Tutor',      to: '/ai-tutor' },
-  { label: 'Flashcards',    to: '/flashcards' },
-  { label: 'Dictionary',    to: '/dictionary' },
+  { label: 'Dashboard',  to: '/dashboard' },
+  { label: 'Path',       to: '/learning-path' },
+  { label: 'AI Tutor',   to: '/ai-tutor' },
+  { label: 'Flashcards', to: '/flashcards' },
+  { label: 'Dictionary', to: '/dictionary' },
 ]
 
 export default function Navbar() {
