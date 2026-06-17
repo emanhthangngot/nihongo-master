@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 
 interface LiquidButtonProps {
@@ -22,6 +23,8 @@ export default function LiquidButton({
   children, onClick, size = 'md', ember = false,
   className, disabled = false, type = 'button', as = 'button', href,
 }: LiquidButtonProps) {
+  const navigate = useNavigate()
+
   const base = cn(
     'liquid-glass rounded-full text-foreground transition-transform',
     'hover:scale-[1.03] active:scale-[0.98] cursor-pointer inline-flex items-center justify-center gap-2',
@@ -30,6 +33,30 @@ export default function LiquidButton({
     disabled && 'opacity-40 pointer-events-none',
     className,
   )
-  if (as === 'a') return <a href={href} className={base} onClick={onClick}>{children}</a>
-  return <button type={type} className={base} onClick={onClick} disabled={disabled}>{children}</button>
+
+  const handleClick = (e: React.MouseEvent) => {
+    if (disabled) return
+    if (onClick) onClick()
+    if (as === 'a' && href) {
+      if (href.startsWith('http') || href.startsWith('//')) {
+        return // Let default <a> behavior handle external links
+      }
+      e.preventDefault()
+      navigate(href)
+    }
+  }
+
+  if (as === 'a') {
+    return (
+      <a href={href} className={base} onClick={handleClick}>
+        {children}
+      </a>
+    )
+  }
+
+  return (
+    <button type={type} className={base} onClick={handleClick} disabled={disabled}>
+      {children}
+    </button>
+  )
 }

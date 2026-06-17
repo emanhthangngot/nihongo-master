@@ -1,42 +1,17 @@
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import Navbar from '@/components/layout/Navbar'
 import MobileNav from '@/components/layout/MobileNav'
 import LiquidButton from '@/components/ui/LiquidButton'
 import { useAIStore } from '@/stores/aiStore'
 import { useToast } from '@/components/global/ToastProvider'
+import { useSSEStream } from '@/hooks/useSSEStream'
 
 const QUICK_PROMPTS = ['Explain て-form','Practice N4 vocab','は vs が particles','How to count things']
 
-const AI_RESPONSES: Record<string, { content: string; grammar?: { title: string; meaning: string; example: string; translation: string } | null }> = {
-  'te-form': {
-    content: `こんにちは！The **て-form** is one of the most essential forms in Japanese grammar.\n\nIt connects verbs and enables dozens of structures:\n• ～ている — ongoing action\n• ～てから — after doing\n• ～てもいい — may I…?\n• ～てください — please do…\n\nWould you like me to break down each one?`,
-    grammar: { title: '～ている', meaning: 'ongoing action or current state', example: '雨が降っている。', translation: 'It is raining.' },
-  },
-  particles: {
-    content: `The classic **は vs が** question! This trips up many learners.\n\n**は (wa)** marks the *topic* — what the sentence is about.\n**が (ga)** marks the *subject* — who performs the action.\n\nKey tip: が introduces new info; は refers to known info.`,
-    grammar: { title: 'は vs が', meaning: 'topic marker vs subject marker', example: '私は学生です。vs 猫が来た。', translation: 'I am a student. vs The cat came.' },
-  },
-  vocab: {
-    content: `Let's practice **N4 vocabulary**! Here are 5 key words:\n\n① **予定** (yotei) — plan, schedule\n② **経験** (keiken) — experience\n③ **連絡** (renraku) — contact\n④ **確認** (kakunin) — confirmation\n⑤ **準備** (junbi) — preparation\n\nShall we make example sentences?`,
-    grammar: null,
-  },
-  default: {
-    content: `That's a great topic! Context is everything in Japanese.\n\nLet me help you understand this step by step. Would you like:\n1. A grammar explanation\n2. Example sentences to practice\n3. A mini exercise to test yourself`,
-    grammar: null,
-  },
-}
-
-function pick(msg: string) {
-  const l = msg.toLowerCase()
-  if (l.includes('て') || l.includes('te-form') || l.includes('teform')) return AI_RESPONSES['te-form']
-  if (l.includes('particle') || l.includes('は') || l.includes('が'))    return AI_RESPONSES.particles
-  if (l.includes('vocab') || l.includes('word') || l.includes('単語'))   return AI_RESPONSES.vocab
-  return AI_RESPONSES.default
-}
-
 export default function AiTutor() {
   const { conversations, activeConvId, activeMessages, isStreaming,
-    addMessage, updateLastMessage, finalizeMessage, setStreaming, newConversation, clearMessages, setActiveConv } = useAIStore()
+    addMessage, clearMessages, setActiveConv, newConversation } = useAIStore()
+  const { sendMessage } = useSSEStream()
   const [input, setInput] = useState('')
   const bottomRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -45,29 +20,20 @@ export default function AiTutor() {
   // Seed welcome message on mount
   useEffect(() => {
     if (activeMessages.length === 0) {
-      addMessage({ role: 'assistant', content: 'こんにちは！I'm your Japanese Sensei 🌸\n\nI can help with grammar explanations, vocabulary practice, and natural conversation.\n\nTry asking me: "Explain the て-form" or "Practice N4 vocab".' })
+      addMessage({ role: 'assistant', content: `こんにちは！I'm your Japanese Sensei 🌸\n\nI can help with grammar explanations, vocabulary practice, and natural conversation.\n\nTry asking me: "Explain the て-form" or "Practice N4 vocab".` })
     }
-  }, [])
+  }, [activeMessages.length, addMessage])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [activeMessages, isStreaming])
 
-  const send = useCallback(async () => {
+  const send = async () => {
     if (!input.trim() || isStreaming) return
     const text = input.trim()
     setInput('')
-    addMessage({ role: 'user', content: text })
-    setStreaming(true)
-    const res = pick(text)
-    addMessage({ role: 'assistant', content: '' })
-    for (let i = 0; i < res.content.length; i++) {
-      await new Promise<void>((r) => setTimeout(r, 10))
-      updateLastMessage(res.content.slice(0, i + 1))
-    }
-    finalizeMessage(res.grammar ?? null)
-    setStreaming(false)
-  }, [input, isStreaming, addMessage, updateLastMessage, finalizeMessage, setStreaming])
+    await sendMessage(text)
+  }
 
   const handleKey = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() }

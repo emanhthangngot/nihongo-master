@@ -31,17 +31,17 @@ function calcLevel(totalXP: number): XPRecord {
 export const useLearningStore = create<LearningState>()(
   persist(
     (set) => ({
-      xp: calcLevel(1240),
+      xp: calcLevel(0),
       streak: {
-        current: 12,
-        longest: 21,
-        lastStudyDate: new Date().toISOString().slice(0, 10),
-        weekDays: [true, true, true, true, true, false, false],
+        current: 0,
+        longest: 0,
+        lastStudyDate: '',
+        weekDays: [false, false, false, false, false, false, false],
       },
       srsQueue: [],
       todayReviewed: 0,
       dailyQuests: [
-        { id: 'review20', title: 'Review 20 flashcards', xpReward: 30, target: 20, current: 14, completed: false },
+        { id: 'review20', title: 'Review 20 flashcards', xpReward: 30, target: 20, current: 0, completed: false },
         { id: 'read1',    title: 'Complete 1 reading',   xpReward: 50, target: 1,  current: 0,  completed: false },
         { id: 'tutor5',   title: 'Chat with AI Tutor',   xpReward: 40, target: 5,  current: 0,  completed: false },
         { id: 'kanji5',   title: 'Learn 5 new kanji',    xpReward: 60, target: 5,  current: 0,  completed: false },

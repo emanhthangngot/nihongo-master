@@ -1,5 +1,4 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
 import Navbar from '@/components/layout/Navbar'
 import MobileNav from '@/components/layout/MobileNav'
 import LiquidButton from '@/components/ui/LiquidButton'
@@ -7,32 +6,8 @@ import AudioButton from '@/components/ui/AudioButton'
 import JapaneseText from '@/components/ui/JapaneseText'
 import PitchAccentGraph from '@/components/ui/PitchAccentGraph'
 import { useToast } from '@/components/global/ToastProvider'
-import type { Word } from '@/types/japanese'
-
-const WORDS: Word[] = [
-  { id:'1', word:'食べる', reading:'たべる', romaji:'taberu', pos:'verb (godan)', jlptLevel:'N5',
-    pitchAccent:{ morae:['た','べ','る'], pattern:[0,1,0] }, patternName:'Nakadaka',
-    meanings:['(transitive) to eat','(figurative) to consume, to live on'],
-    examples:[
-      {jp:'毎日野菜を食べる。', en:'I eat vegetables every day.'},
-      {jp:'もっと食べたい。',  en:'I want to eat more.'},
-      {jp:'何を食べましたか？',en:'What did you eat?'},
-    ]},
-  { id:'2', word:'勉強', reading:'べんきょう', romaji:'benkyō', pos:'noun / suru-verb', jlptLevel:'N5',
-    pitchAccent:{ morae:['べ','ん','き','ょ','う'], pattern:[0,1,1,1,0] }, patternName:'Heiban',
-    meanings:['study','to study (with する)'],
-    examples:[
-      {jp:'日本語を勉強しています。',en:'I am studying Japanese.'},
-      {jp:'勉強は楽しい。',          en:'Studying is fun.'},
-    ]},
-  { id:'3', word:'難しい', reading:'むずかしい', romaji:'muzukashii', pos:'i-adjective', jlptLevel:'N5',
-    pitchAccent:{ morae:['む','ず','か','し','い'], pattern:[0,1,1,1,1] }, patternName:'Heiban',
-    meanings:['difficult; hard','complicated; complex'],
-    examples:[
-      {jp:'この問題は難しい。', en:'This problem is difficult.'},
-      {jp:'日本語は難しくない。',en:'Japanese is not difficult.'},
-    ]},
-]
+import { dictionaryService } from '@/services/dictionary.service'
+import type { DictionaryEntry } from '@/services/dictionary.service'
 
 const FEATURED = [
   {word:'桜',   reading:'さくら', romaji:'sakura',    meaning:'cherry blossom', jlpt:'N4'},
@@ -51,11 +26,12 @@ const JLPT_COLORS: Record<string, string> = {
   N1:'text-pink-300 border-pink-300/40 bg-pink-300/8',
 }
 
-function JLPTBadge({ level }: { level: string }) {
+function JLPTBadge({ level }: { level: string | null }) {
+  if (!level) return null
   return <span className={`text-xs px-2 py-0.5 rounded-full border ${JLPT_COLORS[level] ?? ''}`}>{level}</span>
 }
 
-function WordEntry({ entry, onClose }: { entry: Word; onClose: () => void }) {
+function WordEntry({ entry, onClose }: { entry: DictionaryEntry; onClose: () => void }) {
   const { toast } = useToast()
   return (
     <div className="animate-fade-rise">
@@ -70,7 +46,7 @@ function WordEntry({ entry, onClose }: { entry: Word; onClose: () => void }) {
               <AudioButton text={entry.word} size={22} />
             </div>
             <p className="mono text-sm text-muted-foreground mt-1">{entry.romaji} · {entry.pos}</p>
-            <div className="mt-2"><JLPTBadge level={entry.jlptLevel} /></div>
+            <div className="mt-2"><JLPTBadge level={entry.jlpt_level} /></div>
           </div>
           <div className="flex gap-2 flex-wrap">
             <LiquidButton size="sm" onClick={() => toast('Added to SRS ✓','success')}>+ SRS</LiquidButton>
@@ -80,7 +56,7 @@ function WordEntry({ entry, onClose }: { entry: Word; onClose: () => void }) {
 
         <div className="mt-6 pt-6 border-t border-border">
           <p className="text-xs text-muted-foreground uppercase tracking-widest mb-3">Pitch Accent</p>
-          <PitchAccentGraph morae={entry.pitchAccent.morae} pattern={entry.pitchAccent.pattern} patternName={entry.patternName} />
+          <PitchAccentGraph morae={entry.pitch_morae} pattern={entry.pitch_pattern} patternName="Pattern" />
         </div>
 
         <div className="mt-6 pt-6 border-t border-border">
@@ -92,18 +68,7 @@ function WordEntry({ entry, onClose }: { entry: Word; onClose: () => void }) {
           ))}
         </div>
 
-        <div className="mt-6 pt-6 border-t border-border">
-          <p className="text-xs text-muted-foreground uppercase tracking-widest mb-3">Example Sentences</p>
-          {entry.examples.map((ex, i) => (
-            <div key={i} className="liquid-glass rounded-xl p-4 mb-3 border border-white/6">
-              <div className="flex items-center gap-2">
-                <JapaneseText className="text-base">{ex.jp}</JapaneseText>
-                <AudioButton text={ex.jp} />
-              </div>
-              <p className="text-sm text-muted-foreground mt-1">{ex.en}</p>
-            </div>
-          ))}
-        </div>
+        <p className="text-xs text-muted-foreground mt-8 opacity-40">Example sentences and deep breakdown available in detailed view.</p>
       </div>
     </div>
   )
@@ -111,15 +76,47 @@ function WordEntry({ entry, onClose }: { entry: Word; onClose: () => void }) {
 
 export default function Dictionary() {
   const [query, setQuery]         = useState('')
-  const [selected, setSelected]   = useState<Word | null>(null)
+  const [selected, setSelected]   = useState<DictionaryEntry | null>(null)
   const [showDrop, setShowDrop]   = useState(false)
   const [filter, setFilter]       = useState<string|null>(null)
+  const [suggestions, setSuggestions] = useState<DictionaryEntry[]>([])
+  const [isLoading, setIsLoading] = useState(false)
 
-  const suggestions = query
-    ? WORDS.filter(w =>
-        w.word.includes(query) || w.romaji.toLowerCase().includes(query.toLowerCase()) ||
-        w.meanings.some(m => m.toLowerCase().includes(query.toLowerCase())))
-    : []
+  useEffect(() => {
+    if (!query.trim()) {
+      setSuggestions([])
+      return
+    }
+    const timer = setTimeout(async () => {
+      setIsLoading(true)
+      try {
+        const results = await dictionaryService.search(query, filter ?? undefined)
+        setSuggestions(results)
+      } catch (err) {
+        console.error(err)
+      } finally {
+        setIsLoading(false)
+      }
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [query, filter])
+
+  const selectFeatured = async (f: typeof FEATURED[0]) => {
+    setIsLoading(true)
+    try {
+      const entry = await dictionaryService.getWord(f.word)
+      setSelected(entry)
+    } catch {
+      // Fallback to minimal entry if not found
+      setSelected({
+        id: f.word, word: f.word, reading: f.reading, romaji: f.romaji,
+        pos: 'noun', jlpt_level: f.jlpt, pitch_morae: [...f.reading], pitch_pattern: [...f.reading].map((_,i)=>i>0?1:0),
+        meanings: [f.meaning], tags: []
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   return (
     <div className="min-h-screen pb-20">
@@ -134,27 +131,27 @@ export default function Dictionary() {
 
             <div className="relative max-w-2xl mx-auto mt-6 animate-fade-rise-2">
               <div className="flex items-center gap-3 liquid-glass rounded-2xl px-6 py-4 border border-white/10">
-                <svg className="text-muted-foreground flex-shrink-0" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                <svg className={`text-muted-foreground flex-shrink-0 ${isLoading ? 'animate-spin' : ''}`} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  {isLoading ? <circle cx="12" cy="12" r="10" strokeDasharray="16" /> : <><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></>}
                 </svg>
                 <input value={query} onChange={(e) => { setQuery(e.target.value); setShowDrop(true) }}
-                  onFocus={() => setShowDrop(true)} onBlur={() => setTimeout(() => setShowDrop(false), 150)}
+                  onFocus={() => setShowDrop(true)} onBlur={() => setTimeout(() => setShowDrop(false), 200)}
                   placeholder="食べる, taberu, to eat…"
                   className="flex-1 bg-transparent border-none outline-none text-foreground text-lg jp placeholder:text-muted-foreground" />
                 {query && <button onClick={() => setQuery('')} className="text-muted-foreground hover:text-foreground">✕</button>}
               </div>
               {showDrop && suggestions.length > 0 && (
-                <div className="absolute top-full left-0 right-0 mt-1 rounded-xl border border-border overflow-hidden z-20"
+                <div className="absolute top-full left-0 right-0 mt-1 rounded-xl border border-border overflow-hidden z-20 shadow-2xl"
                   style={{ background: 'hsl(var(--surface-raised))' }}>
                   {suggestions.map(w => (
                     <div key={w.id} className="flex items-center gap-3 px-5 py-3 cursor-pointer hover:bg-white/5 transition-colors"
                       onClick={() => { setSelected(w); setShowDrop(false) }}>
                       <span className="jp text-xl w-12">{w.word}</span>
-                      <div className="flex-1">
-                        <p className="text-sm text-muted-foreground">{w.romaji}</p>
-                        <p className="text-sm">{w.meanings[0]}</p>
+                      <div className="flex-1 text-left">
+                        <p className="text-sm text-muted-foreground">{w.romaji} · {w.reading}</p>
+                        <p className="text-sm truncate">{w.meanings[0]}</p>
                       </div>
-                      <JLPTBadge level={w.jlptLevel} />
+                      <JLPTBadge level={w.jlpt_level} />
                     </div>
                   ))}
                 </div>
@@ -178,15 +175,7 @@ export default function Dictionary() {
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 animate-fade-rise-3">
               {FEATURED.map(f => (
                 <div key={f.word} className="liquid-glass rounded-2xl p-4 cursor-pointer border border-white/6 hover:border-accent-ember/30 hover:scale-[1.02] transition-all"
-                  onClick={() => {
-                    const found = WORDS.find(w => w.word === f.word)
-                    setSelected(found ?? {
-                      id: f.word, word: f.word, reading: f.reading, romaji: f.romaji,
-                      pos: 'noun', jlptLevel: f.jlpt as Word['jlptLevel'], patternName: 'Heiban',
-                      pitchAccent: { morae: [...f.reading], pattern: [...f.reading].map((_,i)=>i>0?1:0) },
-                      meanings: [f.meaning], examples: [], tags: [],
-                    })
-                  }}>
+                  onClick={() => selectFeatured(f)}>
                   <div className="jp text-3xl mb-1">{f.word}</div>
                   <div className="mono text-xs text-muted-foreground">{f.romaji}</div>
                   <div className="text-sm mt-1">{f.meaning}</div>
