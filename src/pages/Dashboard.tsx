@@ -1,5 +1,4 @@
-import { useMemo } from 'react'
-import { Link } from 'react-router-dom'
+import { useMemo, useEffect } from 'react'
 import Navbar from '@/components/layout/Navbar'
 import MobileNav from '@/components/layout/MobileNav'
 import XPBar from '@/components/ui/XPBar'
@@ -29,7 +28,12 @@ function retColor(r: number) {
 }
 
 export default function Dashboard() {
-  const { xp, streak } = useLearningStore()
+  const { xp, streak, srsQueue, fetchStats, fetchSRSQueue, isLoading } = useLearningStore()
+
+  useEffect(() => {
+    fetchStats()
+    fetchSRSQueue()
+  }, [fetchStats, fetchSRSQueue])
 
   const heatmapData = useMemo(() => {
     const d: Record<string, number> = {}
@@ -41,6 +45,15 @@ export default function Dashboard() {
     }
     return d
   }, [])
+
+  if (isLoading) return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="animate-pulse flex flex-col items-center gap-4">
+        <div className="w-12 h-12 rounded-full bg-white/10" />
+        <div className="w-32 h-4 bg-white/10 rounded" />
+      </div>
+    </div>
+  )
 
   return (
     <div className="min-h-screen pb-20">
@@ -75,11 +88,11 @@ export default function Dashboard() {
           {/* SRS Queue */}
           <div className="liquid-glass rounded-2xl p-6 border border-white/6 animate-fade-rise-1">
             <p className="text-xs text-muted-foreground uppercase tracking-widest">Today's Reviews</p>
-            <div className="font-display text-5xl mt-2">47</div>
+            <div className="font-display text-5xl mt-2">{srsQueue.length}</div>
             <p className="text-sm text-muted-foreground">cards due now</p>
-            <p className="text-sm text-accent-ember mt-1">+ 15 new</p>
-            <XPBar current={14} max={20} className="mt-4" />
-            <p className="text-xs text-muted-foreground mt-1">70% of daily goal</p>
+            <p className="text-sm text-accent-ember mt-1">+ 0 new</p>
+            <XPBar current={Math.min(srsQueue.length, 20)} max={20} className="mt-4" />
+            <p className="text-xs text-muted-foreground mt-1">Target: 20 per day</p>
             <LiquidButton ember size="sm" className="w-full justify-center mt-4" as="a" href="/flashcards">
               Begin Review →
             </LiquidButton>
@@ -97,7 +110,7 @@ export default function Dashboard() {
                 </div>
               ))}
             </div>
-            <p className="text-xs text-muted-foreground mt-3">🔥 3 days to record!</p>
+            <p className="text-xs text-muted-foreground mt-3">{streak.current > 0 ? `🔥 Keep it up!` : 'Start your streak today!'}</p>
           </div>
 
           {/* XP */}

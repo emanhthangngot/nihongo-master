@@ -1,6 +1,7 @@
 import { Response, NextFunction } from 'express'
 import { AuthRequest } from '../middleware/auth'
 import { supabase } from '../lib/supabase'
+import { userService } from '../services/userService'
 
 export async function getProfile(req: AuthRequest, res: Response, next: NextFunction) {
   try {
@@ -9,6 +10,13 @@ export async function getProfile(req: AuthRequest, res: Response, next: NextFunc
       .eq('id', req.userId).single()
     if (error) throw error
     res.json(data)
+  } catch (err) { next(err) }
+}
+
+export async function getStats(req: AuthRequest, res: Response, next: NextFunction) {
+  try {
+    const stats = await userService.getStats(req.userId!)
+    res.json(stats)
   } catch (err) { next(err) }
 }
 

@@ -14,12 +14,15 @@ interface LearningState {
   srsQueue: SRSCard[]
   todayReviewed: number
   dailyQuests: DailyQuest[]
+  isLoading: boolean
 
   addXP: (amount: number) => void
   updateStreak: () => void
   setSRSQueue: (cards: SRSCard[]) => void
   gradeCard: (cardId: string, rating: ReviewRating) => void
   incrementReviewed: () => void
+  fetchStats: () => Promise<void>
+  fetchSRSQueue: () => Promise<void>
 }
 
 function calcLevel(totalXP: number): XPRecord {
@@ -30,7 +33,7 @@ function calcLevel(totalXP: number): XPRecord {
 
 export const useLearningStore = create<LearningState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       xp: calcLevel(0),
       streak: {
         current: 0,
@@ -40,12 +43,8 @@ export const useLearningStore = create<LearningState>()(
       },
       srsQueue: [],
       todayReviewed: 0,
-      dailyQuests: [
-        { id: 'review20', title: 'Review 20 flashcards', xpReward: 30, target: 20, current: 0, completed: false },
-        { id: 'read1',    title: 'Complete 1 reading',   xpReward: 50, target: 1,  current: 0,  completed: false },
-        { id: 'tutor5',   title: 'Chat with AI Tutor',   xpReward: 40, target: 5,  current: 0,  completed: false },
-        { id: 'kanji5',   title: 'Learn 5 new kanji',    xpReward: 60, target: 5,  current: 0,  completed: false },
-      ],
+      dailyQuests: [],
+      isLoading: false,
 
       addXP: (amount) =>
         set((s) => ({ xp: calcLevel(s.xp.totalXP + amount) })),
@@ -80,6 +79,39 @@ export const useLearningStore = create<LearningState>()(
         })),
 
       incrementReviewed: () => set((s) => ({ todayReviewed: s.todayReviewed + 1 })),
+
+      fetchStats: async () => {
+        const { default: api } = await import('@/services/api')
+        set({ isLoading: true })
+        try {
+          const { data } = await api.get('/user/stats')
+          set({
+            xp: calcLevel(data.total_xp),
+            streak: {
+              current: data.streak,
+              longest: data.longest_streak,
+              lastStudyDate: data.last_study_date,
+              weekDays: data.week_days ?? [false, false, false, false, false, false, false],
+            }
+          })
+          const { data: quests } = await api.get('/user/daily-quests')
+          set({ dailyQuests: quests })
+        } catch (err) {
+          console.error('Failed to fetch stats:', err)
+        } finally {
+          set({ isLoading: false })
+        }
+      },
+
+      fetchSRSQueue: async () => {
+        const { default: api } = await import('@/services/api')
+        try {
+          const { data } = await api.get('/srs/queue')
+          set({ srsQueue: data })
+        } catch (err) {
+          console.error('Failed to fetch SRS queue:', err)
+        }
+      }
     }),
     { name: 'nihongo-learning' }
   )
