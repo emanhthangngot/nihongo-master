@@ -2,7 +2,7 @@ import { Queue, Worker } from 'bullmq'
 import { redis } from '../lib/redis'
 import { createClient } from '@supabase/supabase-js'
 
-export const embeddingQueue = new Queue('embeddings', { connection: redis })
+export const embeddingQueue = new Queue('embeddings', { connection: redis as any })
 
 const AI_SERVICE_URL = process.env.AI_SERVICE_URL ?? 'http://localhost:8000'
 
@@ -26,7 +26,7 @@ export const embeddingWorker = new Worker(
     })
     if (!res.ok) throw new Error(`Embed service ${res.status}`)
 
-    const data = await res.json()
+    const data = await res.json() as { embeddings?: number[][] }
     const embedding = data.embeddings?.[0]
     if (!embedding) throw new Error('No embedding returned')
 
@@ -37,7 +37,7 @@ export const embeddingWorker = new Worker(
     return { record_id, table, dims: embedding.length }
   },
   {
-    connection: redis,
+    connection: redis as any,
     concurrency: 3,
     // Retry 3 times with exponential backoff
   }

@@ -41,3 +41,7 @@ ollama-models/
 # Claude
 .claude/
 *.md
+
+# AI Agent rules & configs
+.agents/
+AGENTS.md
