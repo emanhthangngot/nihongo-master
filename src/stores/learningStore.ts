@@ -19,7 +19,6 @@ interface LearningState {
   addXP: (amount: number) => void
   updateStreak: () => void
   setSRSQueue: (cards: SRSCard[]) => void
-  gradeCard: (cardId: string, rating: ReviewRating) => void
   incrementReviewed: () => void
   fetchStats: () => Promise<void>
   fetchSRSQueue: () => Promise<void>
@@ -64,19 +63,6 @@ export const useLearningStore = create<LearningState>()(
         }),
 
       setSRSQueue: (cards) => set({ srsQueue: cards }),
-
-      gradeCard: (cardId, rating) =>
-        set((s) => ({
-          srsQueue: s.srsQueue.map((c) => {
-            if (c.id !== cardId) return c
-            const intervals: Record<ReviewRating, number> = {
-              again: 1, hard: Math.max(1, c.interval - 1),
-              good: Math.round(c.interval * c.ease),
-              easy: Math.round(c.interval * c.ease * 1.3),
-            }
-            return { ...c, interval: intervals[rating], lapses: rating === 'again' ? c.lapses + 1 : c.lapses }
-          }),
-        })),
 
       incrementReviewed: () => set((s) => ({ todayReviewed: s.todayReviewed + 1 })),
 
