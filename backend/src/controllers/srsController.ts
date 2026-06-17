@@ -25,6 +25,13 @@ const ReviewCardSchema = z.object({
   clientMutationId: z.string().uuid().optional()
 })
 
+const ratingMap: Record<number, 'again' | 'hard' | 'good' | 'easy'> = {
+  1: 'again',
+  2: 'hard',
+  3: 'good',
+  4: 'easy'
+}
+
 export async function gradeCard(req: AuthRequest, res: Response, next: NextFunction) {
   try {
     const { cardId } = req.params
@@ -47,12 +54,16 @@ export async function gradeCard(req: AuthRequest, res: Response, next: NextFunct
       .from('srs_cards').select('*').eq('id', cardId).eq('user_id', req.userId).single()
     if (!card) return res.status(404).json({ error: 'Card not found' })
 
-    const updated = fsrsGrade(card, rating)
+    const updated = fsrsGrade(card, ratingMap[rating])
     const { data } = await supabase
       .from('srs_cards').update(updated).eq('id', cardId).select().single()
 
     if (clientMutationId) {
-       await supabase.from('client_mutations').insert({ id: clientMutationId, user_id: req.userId, mutation_type: 'grade_card' }).catch(() => {})
+      try {
+        await supabase.from('client_mutations').insert({ id: clientMutationId, user_id: req.userId, mutation_type: 'grade_card' })
+      } catch (err) {
+        // ignore duplicate mutation errors
+      }
     }
 
     res.json(data)

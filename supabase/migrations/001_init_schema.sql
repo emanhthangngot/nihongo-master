@@ -1,6 +1,6 @@
 -- Enable extensions
 create extension if not exists "uuid-ossp";
-create extension if not exists "pgvector";
+create extension if not exists "vector";
 
 -- ─── Users ────────────────────────────────────────────────────────────────
 create table if not exists users (

@@ -1,3 +1,20 @@
+-- 0. Create document_embeddings table
+CREATE TABLE IF NOT EXISTS public.document_embeddings (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  content TEXT NOT NULL,
+  embedding vector(3072),
+  metadata JSONB DEFAULT '{}'::jsonb,
+  source_url TEXT,
+  source_name TEXT,
+  license TEXT,
+  review_status TEXT DEFAULT 'raw',
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+ALTER TABLE public.document_embeddings ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow public read access to document_embeddings" 
+  ON public.document_embeddings FOR SELECT TO authenticated, anon USING (true);
+
 -- 1. Client Mutations for Idempotency
 CREATE TABLE IF NOT EXISTS client_mutations (
   id uuid primary key,
